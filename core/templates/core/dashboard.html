@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Minerador de Produtos — Shopee</title>
+  <title>Achei &amp; Indico — Minerador de Produtos Shopee</title>
   <!-- Google Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -643,6 +643,45 @@
       color: #1e293b;
       font-weight: 500;
     }
+    /* ===== Rodapé de confiança ===== */
+    .footer-confianca {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 30px 0 18px;
+      margin-top: 40px;
+    }
+    .footer-confianca h5 {
+      color: var(--primary-2);
+      font-size: 13px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: 10px;
+    }
+    .footer-confianca p,
+    .footer-confianca li {
+      color: var(--text-muted);
+      font-size: 12.5px;
+      line-height: 1.6;
+    }
+    .footer-confianca ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .footer-confianca a {
+      color: var(--primary-2);
+      text-decoration: none;
+    }
+    .footer-confianca a:hover { text-decoration: underline; }
+    .footer-base {
+      border-top: 1px solid var(--border);
+      margin-top: 20px;
+      padding-top: 14px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 11.5px;
+    }
   </style>
 </head>
 <body>
@@ -661,10 +700,10 @@ function imagemProdutoFalhou() {
   <header class="app-header">
     <div>
       <h1>
-        <span class="app-logo">⛏️</span>
+        <span class="app-logo">🛍️</span>
         <span>
-          Minerador de Produtos
-          <div class="app-subtitle">Encontre os mais vendidos da Shopee e prepare sua divulgação</div>
+          Achei &amp; Indico
+          <div class="app-subtitle">Minerador de Produtos — encontre os mais vendidos da Shopee e prepare sua divulgação</div>
         </span>
       </h1>
     </div>
@@ -853,6 +892,33 @@ function imagemProdutoFalhou() {
   </div>
   {% endif %}
 </div>
+<!-- ===== RODAPÉ DE CONFIANÇA ===== -->
+<footer class="footer-confianca">
+  <div class="container">
+    <div class="row g-4">
+      <div class="col-md-4">
+        <h5>🛍️ Achei &amp; Indico</h5>
+        <p>Ferramenta para afiliados encontrarem os produtos mais vendidos da Shopee e gerarem material pronto para divulgar em minutos.</p>
+      </div>
+      <div class="col-md-4">
+        <h5>Como funciona</h5>
+        <ul>
+          <li>1. Busque um nicho ou produto</li>
+          <li>2. Clique em "✨ Preparar com IA"</li>
+          <li>3. Copie o prompt, o post e o link de afiliado</li>
+        </ul>
+      </div>
+      <div class="col-md-4">
+        <h5>Links seguros</h5>
+        <p>Todos os links gerados são de afiliado rastreados — você recebe sua comissão por cada venda feita através deles.</p>
+        <p>Contato: <a href="mailto:contato@acheieindico.com.br">contato@acheieindico.com.br</a></p>
+      </div>
+    </div>
+    <div class="footer-base">
+      © 2026 Achei &amp; Indico — Todos os direitos reservados.
+    </div>
+  </div>
+</footer>
 <!-- ============ MODAL DO GERADOR DE IA (V11 - POLIDO) ============ -->
 <div class="modal fade" id="modalGeradorIA" tabindex="-1" aria-labelledby="modalGeradorIALabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
