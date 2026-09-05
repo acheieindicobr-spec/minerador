@@ -14,6 +14,16 @@ from .models import PostRegistro, ProdutoValidado
 from .shopee_api import ShopeeService
 
 # ============================================================
+# LIMITES DE CARACTERES DA LEGENDA POR PLATAFORMA
+# Shopee Vídeo: 150 (inclui hashtags) | Reels/TikTok: 2200 | Feed FB/IG: 2200
+# ============================================================
+LIMITES_CARACTERES_LEGENDA = {
+    'shopee': 150,
+    'reels': 2200,
+    'feed': 2200,
+}
+
+# ============================================================
 # CARREGA O ARQUIVO .env (raiz do projeto) — SEM ISSO A CHAVE
 # DO GEMINI CHEGA VAZIA E O CODIGO CAI NO "PLANO B" GENERICO!
 # ============================================================
@@ -39,7 +49,7 @@ GRUPOS_PADRAO = [
 # MODA ÍNTIMA — palavras que disparam o MODO SEGURO de vídeo
 # ============================================================
 PALAVRAS_MODA_INTIMA = [
-    'calcinha', 'fio dental', 'lingerie', 'modeladora', 'sutiã', 'sutia',
+     'calcinha', 'fio dental', 'lingerie', 'modeladora', 'sutiã', 'sutia',
     'cinta', 'baby doll', 'babydoll', 'camisola', 'cueca', 'body',
     'corselet', 'conjunto intimo', 'conjunto íntimo', 'meia calça',
     'meia-calça', 'calcinhas',
@@ -151,24 +161,23 @@ REGRAS DO PROMPT DE VÍDEO — REDES SOCIAIS (LIVRE, COM SEGURANÇA PARA MODA Í
 - NÃO use tempos de cena em segundos (ex.: "CENA 1 (0-3s)"). Descreva a estrutura em etapas: ABERTURA, DESENVOLVIMENTO, DETALHES, FECHAMENTO.
 - Formato final: uma linha por etapa, separadas por " | ".
 REGRAS DA COPY (obrigatórias):
+- O POST é ÚNICO e serve para TODAS as plataformas (Facebook, Instagram, TikTok, Shopee Vídeo).
 - Use a fórmula AIDA: Atenção (gancho com a dor/benefício), Interesse (detalhe que desperta), Desejo (produto em uso/prova), Ação (CTA claro).
 - Fale da DOR ou desejo do cliente, NÃO apenas do nome do produto.
 - Linguagem simples e brasileira, com no MÁXIMO 3 emojis. Sem promessas exageradas ou falsas.
 - Máximo 2-3 frases curtas, tom de achadinho/oportunidade.
+- INCLUA as palavras-chave de busca do produto NATURALMENTE DENTRO do texto do post (ex.: "pote hermético com tampa", "organizador de cozinha").
+- Termine com um CTA claro (ex.: "Garanta o seu pelo link!").
+- NO FINAL do post, em linhas separadas, escreva 6 a 8 HASHTAGS em português relacionadas ao produto e ao nicho, cada uma começando com # e sem espaços internos (ex.: #achadinhoshopee, #promocaoshopee, #oferta, #cozinha, #organizacao, #comprasbaratas). As hashtags fazem parte do post.
 REGRAS DO NICHO:
-- NICHO deve ter 1-3 palavras, específico e vendedor (ex.: "Moda Íntima Feminina").
+- NICHO deve ter 1-3 palavras, específico e vendedor (ex.: "Moda Íntima Feminina", "Limpeza & Lavanderia", "Beleza Feminina").
 REGRAS DOS GRUPOS:
 - GRUPOS: 5 TERMOS DE BUSCA distintos de grupos no FACEBOOK onde esse público compra, separados por vírgula. APENAS Facebook, NUNCA Telegram. Seja específico e variado (ex.: "achadinhos e promoções", "grupo de ofertas", "compras baratas", "promoções imperdíveis", "grupo de descontos").
-REGRAS DE HASHTAGS E PALAVRAS-CHAVE (obrigatórias):
-- HASHTAGS: 6 a 8 hashtags em português, relacionadas ao produto e ao nicho, separadas por vírgula, cada uma começando com # e SEM espaços internos (ex.: "#achadinhoshopee, #promocaoshopee, #oferta, #modaintima, #lingerie, #comprasbaratas").
-- PALAVRAS_CHAVE: 5 a 7 palavras-chave de busca em português que o público usaria para achar esse produto na Shopee, separadas por vírgula, sem # (ex.: "calcinha fio dental, lingerie feminina, calcinha confortavel, moda intima, calcinha promoção").
 Responda ESTRITAMENTE neste formato, sem texto fora dele:
 NICHO: <nicho>
-COPY: <copy pronta>
+COPY: <post completo com palavras-chave no texto, CTA e hashtags no final>
 PROMPT_VIDEO: <roteiro de cenas>
 GRUPOS: <termo 1>, <termo 2>, <termo 3>, <termo 4>, <termo 5>
-HASHTAGS: <hashtag 1>, <hashtag 2>, <hashtag 3>, <hashtag 4>, <hashtag 5>, <hashtag 6>
-PALAVRAS_CHAVE: <palavra 1>, <palavra 2>, <palavra 3>, <palavra 4>, <palavra 5>
 """
     else:
         prompt_sistema = f"""
@@ -191,24 +200,23 @@ REGRAS DO PROMPT DE VÍDEO — REDES SOCIAIS (LIVRE)
 - NÃO use tempos de cena em segundos (ex.: "CENA 1 (0-3s)"). Descreva a estrutura em etapas: ABERTURA, DESENVOLVIMENTO, DETALHES, FECHAMENTO.
 - Formato final: uma linha por etapa, separadas por " | ".
 REGRAS DA COPY (obrigatórias):
+- O POST é ÚNICO e serve para TODAS as plataformas (Facebook, Instagram, TikTok, Shopee Vídeo).
 - Use a fórmula AIDA: Atenção (gancho com a dor/benefício), Interesse (detalhe que desperta), Desejo (produto em uso/prova), Ação (CTA claro).
 - Fale da DOR ou desejo do cliente, NÃO apenas do nome do produto.
 - Linguagem simples e brasileira, com no MÁXIMO 3 emojis. Sem promessas exageradas ou falsas.
 - Máximo 2-3 frases curtas, tom de achadinho/oportunidade.
+- INCLUA as palavras-chave de busca do produto NATURALMENTE DENTRO do texto do post (ex.: "pote hermético com tampa", "organizador de cozinha").
+- Termine com um CTA claro (ex.: "Garanta o seu pelo link!").
+- NO FINAL do post, em linhas separadas, escreva 6 a 8 HASHTAGS em português relacionadas ao produto e ao nicho, cada uma começando com # e sem espaços internos (ex.: #achadinhoshopee, #promocaoshopee, #oferta, #cozinha, #organizacao, #comprasbaratas). As hashtags fazem parte do post.
 REGRAS DO NICHO:
-- NICHO deve ter 1-3 palavras, específico e vendedor (ex.: "Limpeza & Lavanderia", "Beleza Feminina").
+- NICHO deve ter 1-3 palavras, específico e vendedor (ex.: "Moda Íntima Feminina", "Limpeza & Lavanderia", "Beleza Feminina").
 REGRAS DOS GRUPOS:
 - GRUPOS: 5 TERMOS DE BUSCA distintos de grupos no FACEBOOK onde esse público compra, separados por vírgula. APENAS Facebook, NUNCA Telegram. Seja específico e variado (ex.: "achadinhos e promoções", "grupo de ofertas", "compras baratas", "promoções imperdíveis", "grupo de descontos").
-REGRAS DE HASHTAGS E PALAVRAS-CHAVE (obrigatórias):
-- HASHTAGS: 6 a 8 hashtags em português, relacionadas ao produto e ao nicho, separadas por vírgula, cada uma começando com # e SEM espaços internos (ex.: "#achadinhoshopee, #promocaoshopee, #oferta, #cozinha, #organizacao, #comprasbaratas").
-- PALAVRAS_CHAVE: 5 a 7 palavras-chave de busca em português que o público usaria para achar esse produto na Shopee, separadas por vírgula, sem # (ex.: "pote hermetico, pote plastico com tampa, organizador de cozinha, marmita, pote de alimentos").
 Responda ESTRITAMENTE neste formato, sem texto fora dele:
 NICHO: <nicho>
-COPY: <copy pronta>
+COPY: <post completo com palavras-chave no texto, CTA e hashtags no final>
 PROMPT_VIDEO: <roteiro de cenas>
 GRUPOS: <termo 1>, <termo 2>, <termo 3>, <termo 4>, <termo 5>
-HASHTAGS: <hashtag 1>, <hashtag 2>, <hashtag 3>, <hashtag 4>, <hashtag 5>, <hashtag 6>
-PALAVRAS_CHAVE: <palavra 1>, <palavra 2>, <palavra 3>, <palavra 4>, <palavra 5>
 """
     try:
         modelos_disponiveis = [
@@ -1063,15 +1071,201 @@ Responda APENAS com o prompt do vídeo, sem explicações, sem títulos, sem tex
             "Adapte a duração ao limite da ferramenta."
         )
 
+def _chamar_gemini_prompt(prompt_sistema):
+    """Envia um pedido ao Gemini e devolve o texto da resposta (ou '')."""
+    if not GEMINI_API_KEY:
+        return ""
+    modelos_disponiveis = ["gemini-3.6-flash", "gemini-3.5-flash-lite"]
+    for modelo in modelos_disponiveis:
+        url_api = f"https://generativelanguage.googleapis.com/v1beta/models/{modelo}:generateContent?key={GEMINI_API_KEY}"
+        payload = {"contents": [{"parts": [{"text": prompt_sistema}]}]}
+        for tentativa in range(2):
+            try:
+                response = requests.post(url_api, json=payload, timeout=25)
+                res_json = response.json()
+                if "candidates" in res_json and len(res_json["candidates"]) > 0:
+                    return res_json["candidates"][0]["content"]["parts"][0]["text"].strip()
+                elif "error" in res_json:
+                    codigo_erro = res_json["error"].get("code")
+                    print(f"[AVISO GEMINI]: Erro {codigo_erro}")
+                    if codigo_erro in (429, 503):
+                        time.sleep(1)
+                        continue
+                    break
+            except Exception as req_err:
+                print(f"[ERRO REQUISIÇÃO GEMINI]: {req_err}")
+                time.sleep(1)
+    return ""
+
+def gerar_prompt_reels_tiktok_video(nome_produto, nicho_busca=""):
+    """Gera um prompt 9:16 estilo LIVRE (Reels/TikTok): mesmas regras do
+    prompt de redes sociais, com o formato de tela cheia explícito."""
+    fallback = (
+        "Vídeo vertical 9:16 (tela cheia) do produto EXATAMENTE como na imagem de referência, "
+        "em estilo livre e criativo para Reels e TikTok. "
+        "PRIMEIRO, crie um STORYBOARD (imagem com os quadros da cena) mostrando o "
+        "produto idêntico à imagem — mesmo corte, cores, tecido e quantidade — para o "
+        "usuário conferir e aprovar; SÓ DEPOIS gere o vídeo final. "
+        "MOSTRE APENAS UM ÚNICO ITEM — proibido duplicar o produto ou adicionar outros. "
+        "Gancho forte nos primeiros 2 segundos para prender quem rola o feed. "
+        "Abertura: produto em destaque com texto chamativo. "
+        "Desenvolvimento: cortes dinâmicos e movimento natural de câmera (aproximação, giro leve). "
+        "Detalhes: benefício principal do produto em close-up. "
+        "Fechamento: CTA para comprar pelo link. "
+        "Todo texto na tela em português do Brasil, curto e de impacto. "
+        "Sem marca d'água de outras plataformas. "
+        "Adapte a duração ao limite da ferramenta."
+    )
+    if not GEMINI_API_KEY:
+        return fallback
+    prompt_sistema = f"""
+Você é um estrategista de vídeos curtos para REELS (Instagram) e TIKTOK, especialista em produtos Shopee.
+Produto: "{nome_produto}". Nicho informado (se houver): "{nicho_busca}".
+Gere UM prompt de vídeo (image-to-video) escrito em PORTUGUÊS DO BRASIL, em estilo LIVRE e criativo de rede social, seguindo À RISCA as regras abaixo.
+============================================================
+REGRAS OBRIGATÓRIAS (NÃO NEGOCIÁVEL)
+============================================================
+0. STORYBOARD ANTES DO VÍDEO (OBRIGATÓRIO): o prompt deve instruir o gerador a criar PRIMEIRO um storyboard (imagem com os quadros da cena), mostrando o produto idêntico à imagem de referência e com UM único item, para o usuário conferir e aprovar; SÓ DEPOIS gerar o vídeo final.
+1. FORMATO: vídeo VERTICAL 9:16 (1080x1920), TELA CHEIA, sem bordas nem espaços vazios.
+2. PRODUTO COERENTE E FIEL (regra mais importante): o produto DEVE ser gerado a partir da IMAGEM DE REFERÊNCIA e ser IDÊNTICO ao do link — mesmo corte, cores, quantidade de peças, tecido, acabamento. PROIBIDO reimaginar, redesenhar, trocar cores, mudar a quantidade, duplicar ou mostrar produto diferente do anunciado.
+3. UM ÚNICO PRODUTO POR VÍDEO: foque apenas no produto anunciado, mostrando UM único item (ou as peças reais do kit anunciado).
+4. ESTILO LIVRE: a criatividade é bem-vinda — gancho forte nos primeiros 2 segundos, cortes dinâmicos, ritmo acelerado de trend, movimento natural de câmera (aproximação, giro leve). A liberdade vale para ENQUADRAMENTO, CENÁRIO e RITMO — NUNCA para alterar o produto nem a quantidade de itens.
+5. TEXTO NA TELA (se houver): TODO texto em PORTUGUÊS DO BRASIL, curto e chamativo (ex.: 'Aproveite', 'Oferta', 'Só hoje', 'R$ 49,90').
+6. SEM MARCA D'ÁGUA de outras plataformas e sem logos de concorrentes.
+7. SEM PROMESSAS ENGANOSAS (nada de 'cura milagrosa' ou 'resultado garantido') e SEM conteúdo proibido: nudez, violência, ódio, atividades ilegais, álcool/cigarros, conteúdo político.
+8. CTA final: compre pelo link (sem inventar URL).
+9. NÃO use tempos de cena em segundos. Descreva a estrutura em etapas: ABERTURA, DESENVOLVIMENTO, DETALHES, FECHAMENTO.
+10. Formato final: uma linha por etapa, separadas por " | ".
+Responda APENAS com o prompt do vídeo, sem explicações, sem títulos, sem texto extra.
+"""
+    texto = _chamar_gemini_prompt(prompt_sistema)
+    if texto:
+        return texto
+    return fallback
+
+def gerar_prompt_feed_video(nome_produto, nicho_busca=""):
+    """Gera um prompt 4:5 para o FEED do Facebook e do Instagram."""
+    fallback = (
+        "Vídeo vertical 4:5 (1080x1350) do produto EXATAMENTE como na imagem de referência, "
+        "próprio para o FEED do Facebook e do Instagram. "
+        "PRIMEIRO, crie um STORYBOARD (imagem com os quadros da cena) mostrando o "
+        "produto idêntico à imagem — mesmo corte, cores, tecido e quantidade — para o "
+        "usuário conferir e aprovar; SÓ DEPOIS gere o vídeo final. "
+        "MOSTRE APENAS UM ÚNICO ITEM — proibido duplicar o produto ou adicionar outros. "
+        "Composição CENTRALIZADA: mantenha o produto e os textos dentro da área central "
+        "(as bordas podem ser cortadas na visualização do feed). "
+        "Abertura: produto em destaque. "
+        "Desenvolvimento: benefício principal em close-up. "
+        "Detalhes: tamanho, material e diferenciais. "
+        "Fechamento: CTA para comprar pelo link. "
+        "Textos curtos e em FONTE GRANDE, em português do Brasil, no máximo 1 a 2 frases por cena. "
+        "Fundo limpo, sem poluição visual. "
+        "Sem marca d'água de outras plataformas. "
+        "Adapte a duração ao limite da ferramenta."
+    )
+    if not GEMINI_API_KEY:
+        return fallback
+    prompt_sistema = f"""
+Você é um estrategista de vídeos para o FEED do FACEBOOK e do INSTAGRAM, especialista em produtos Shopee.
+Produto: "{nome_produto}". Nicho informado (se houver): "{nicho_busca}".
+Gere UM prompt de vídeo (image-to-video) escrito em PORTUGUÊS DO BRASIL, próprio para aparecer em um BLOCO do feed (não em tela cheia), seguindo À RISCA as regras abaixo.
+============================================================
+REGRAS OBRIGATÓRIAS (NÃO NEGOCIÁVEL)
+============================================================
+0. STORYBOARD ANTES DO VÍDEO (OBRIGATÓRIO): o prompt deve instruir o gerador a criar PRIMEIRO um storyboard (imagem com os quadros da cena), mostrando o produto idêntico à imagem de referência e com UM único item, para o usuário conferir e aprovar; SÓ DEPOIS gerar o vídeo final.
+1. FORMATO: vídeo VERTICAL 4:5 (1080x1350). NUNCA use 9:16, 1:1 ou 16:9 — o vídeo aparece em um BLOCO dentro do feed, então tudo precisa caber na área visível.
+2. COMPOSIÇÃO CENTRALIZADA E SEGURA: mantenha o produto e os textos dentro da área central do quadro; as bordas podem ser cortadas na visualização do feed.
+3. PRODUTO COERENTE E FIEL (regra mais importante): o produto DEVE ser gerado a partir da IMAGEM DE REFERÊNCIA e ser IDÊNTICO ao do link — mesmo corte, cores, quantidade de peças, tecido, acabamento. PROIBIDO reimaginar, redesenhar, trocar cores, mudar a quantidade, duplicar ou mostrar produto diferente do anunciado.
+4. UM ÚNICO PRODUTO POR VÍDEO: foque apenas no produto anunciado, mostrando UM único item (ou as peças reais do kit anunciado).
+5. TEXTOS NA TELA: CURTOS e em FONTE GRANDE (o vídeo aparece menor no feed, então o texto precisa ser lido fácil), em PORTUGUÊS DO BRASIL, no MÁXIMO 1 a 2 frases curtas por cena (ex.: 'Aproveite', 'Oferta', 'R$ 49,90').
+6. FUNDO LIMPO e sem poluição visual, produto em evidência.
+7. SEM MARCA D'ÁGUA de outras plataformas e sem logos de concorrentes.
+8. SEM PROMESSAS ENGANOSAS (nada de 'cura milagrosa' ou 'resultado garantido') e SEM conteúdo proibido: nudez, violência, ódio, atividades ilegais, álcool/cigarros, conteúdo político.
+9. CTA final: compre pelo link (sem inventar URL).
+10. NÃO use tempos de cena em segundos. Descreva a estrutura em etapas: ABERTURA, DESENVOLVIMENTO, DETALHES, FECHAMENTO.
+11. Formato final: uma linha por etapa, separadas por " | ".
+Responda APENAS com o prompt do vídeo, sem explicações, sem títulos, sem texto extra.
+"""
+    texto = _chamar_gemini_prompt(prompt_sistema)
+    if texto:
+        return texto
+    return fallback
+def montar_legenda_para_plataforma(copy, hashtags, plataforma='shopee'):
+    """Monta a legenda (copy + hashtags) já no tamanho certo da plataforma.
+    Limites: shopee = 150 | reels = 2200 | feed = 2200.
+    Se passar do limite: primeiro reduz as hashtags (mantém as primeiras),
+    depois corta a copy pelo meio (mantém o gancho do começo e o CTA do fim)."""
+    limite = LIMITES_CARACTERES_LEGENDA.get(plataforma, 150)
+    copy = (copy or '').strip()
+    hashtags = [h for h in (hashtags or []) if h.strip()]
+    hashtags_texto = ' '.join(hashtags)
+
+    def montar():
+        if hashtags_texto:
+            return f"{copy}\n{hashtags_texto}"
+        return copy
+
+    legenda = montar()
+    if len(legenda) <= limite:
+        return legenda, limite, len(legenda)
+
+    # 1º passo: reduz as hashtags (as primeiras são as mais importantes)
+    while hashtags and len(montar()) > limite:
+        hashtags = hashtags[:-1]
+        hashtags_texto = ' '.join(hashtags)
+
+    # 2º passo: se ainda passar, corta a copy mantendo começo e fim
+    if len(montar()) > limite:
+        espaco_copy = limite - (len(hashtags_texto) + 1 if hashtags_texto else 0)
+        if espaco_copy <= 0:
+            copy = ''
+        elif len(copy) > espaco_copy:
+            if espaco_copy <= 12:
+                copy = copy[:espaco_copy]
+            else:
+                metade = espaco_copy // 2
+                copy = copy[:metade].rstrip() + '…' + copy[-(espaco_copy - metade - 1):].lstrip()
+
+    legenda = montar()
+    return legenda, limite, len(legenda)
+
 @require_POST
 def gerar_prompt_shopee(request):
+    """Gera o prompt de vídeo conforme a plataforma escolhida no modal:
+    shopee (9:16 rígido), reels (9:16 livre) ou feed (4:5).
+    Também devolve a LEGENDA (copy + hashtags) já no tamanho certo da plataforma."""
     try:
         nome = request.POST.get('nome', '')
         nicho_busca = request.POST.get('nicho', '')
-        prompt = gerar_prompt_shopee_video(nome, nicho_busca)
-        return JsonResponse({'status': 'sucesso', 'prompt_shopee': prompt})
+        plataforma = request.POST.get('plataforma', 'shopee').strip().lower()
+        if plataforma == 'reels':
+            prompt = gerar_prompt_reels_tiktok_video(nome, nicho_busca)
+        elif plataforma == 'feed':
+            prompt = gerar_prompt_feed_video(nome, nicho_busca)
+        else:
+            prompt = gerar_prompt_shopee_video(nome, nicho_busca)
+        # Legenda no tamanho certo: usa a copy/hashtags que o modal já tem;
+        # se não vierem, gera com o Gemini (fallback — nada quebra).
+        copy = request.POST.get('copy', '').strip()
+        hashtags_raw = request.POST.get('hashtags', '')
+        hashtags = [h.strip() for h in hashtags_raw.split(',') if h.strip()]
+        if not copy or not hashtags:
+            dados_ia = gerar_conteudo_com_gemini(nome, nicho_busca)
+            if not copy:
+                copy = dados_ia['copy_vendas']
+            if not hashtags:
+                hashtags = dados_ia['hashtags']
+        legenda, limite, tamanho = montar_legenda_para_plataforma(copy, hashtags, plataforma)
+        return JsonResponse({
+            'status': 'sucesso',
+            'prompt_shopee': prompt,
+            'legenda_plataforma': legenda,
+            'limite_legenda': limite,
+            'tamanho_legenda': tamanho,
+            'plataforma': plataforma,
+        })
     except Exception as e:
-        print(f"Erro ao gerar prompt Shopee: {e}")
+        print(f"Erro ao gerar prompt: {e}")
         return JsonResponse({'status': 'erro', 'mensagem': str(e)}, status=400)
     
 # ============================================================
