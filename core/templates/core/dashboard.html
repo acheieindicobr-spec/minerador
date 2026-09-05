@@ -1,0 +1,1330 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minerador de Produtos — Shopee</title>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Bootstrap CSS & Ícones -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <style>
+    /* ============================================================
+       DESIGN SYSTEM — cores, espaçamentos e formas centralizadas
+       ============================================================ */
+    :root {
+      --bg: #0b0d10;
+      --surface: #14171c;
+      --surface-2: #1a1e24;
+      --border: #262b33;
+      --border-hover: #3a4150;
+      --text: #f2f4f8;
+      --text-muted: #8b93a1;
+      --surface-1: #1a1e24;
+      --text-1: #f2f4f8;
+      --primary: #ff6600;
+      --primary-2: #ff8c33;
+      --success: #00e676;
+      --radius: 14px;
+      --radius-sm: 9px;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
+    * { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    ::selection { background: rgba(255, 102, 0, 0.3); }
+
+    /* ===== Cabeçalho ===== */
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 14px;
+      padding: 22px 0 18px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 26px;
+    }
+    .app-header h1 {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 1.4rem;
+      font-weight: 800;
+      margin: 0;
+      letter-spacing: -0.02em;
+    }
+    .app-logo {
+      width: 42px; height: 42px;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, var(--primary), var(--primary-2));
+      border-radius: 12px;
+      font-size: 21px;
+      box-shadow: 0 6px 16px rgba(255, 102, 0, 0.3);
+    }
+    .app-subtitle {
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 400;
+      margin-top: 2px;
+    }
+    /* NOVO: agrupador do cabeçalho (badge + botão Atualizar) */
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .badge-total {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255, 102, 0, 0.08);
+      color: var(--primary-2);
+      border: 1px solid rgba(255, 102, 0, 0.25);
+      font-size: 12.5px; font-weight: 600;
+      padding: 8px 16px; border-radius: 999px;
+      white-space: nowrap;
+    }
+    /* NOVO: botão Atualizar */
+    .btn-refresh {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 16px;
+      font-size: 12.5px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      transition: all .15s ease;
+      white-space: nowrap;
+    }
+    .btn-refresh:hover { border-color: var(--primary); color: var(--primary-2); background: var(--surface-2); }
+    .btn-refresh:disabled { opacity: .6; cursor: not-allowed; }
+
+    /* ===== Barra de busca ===== */
+    .search-bar { margin-bottom: 28px; }
+    .search-bar .input-group { box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2); }
+    .search-bar .form-control {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 12px 0 0 12px;
+      padding: 13px 18px;
+      font-size: 14px;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    .search-bar .form-control::placeholder { color: var(--text-muted); }
+    .search-bar .form-control:focus {
+      background: var(--surface);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(255, 102, 0, 0.15);
+      color: var(--text);
+    }
+    .btn-search {
+      background: linear-gradient(135deg, var(--primary), var(--primary-2));
+      color: #fff;
+      font-weight: 700;
+      border: none;
+      border-radius: 0 12px 12px 0;
+      padding: 13px 26px;
+      font-size: 14px;
+      transition: filter .15s ease, transform .1s ease;
+    }
+    .btn-search:hover { filter: brightness(1.08); color: #fff; }
+    .btn-search:active { transform: scale(0.97); }
+
+    /* ===== Cards de produto ===== */
+    .product-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+    }
+    .product-card:hover {
+      transform: translateY(-5px);
+      border-color: rgba(255, 102, 0, 0.5);
+      box-shadow: var(--shadow);
+    }
+    .product-card .thumb {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      background: var(--surface-2);
+    }
+    .product-card .card-body {
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+    /* AJUSTE 1: título SEMPRE com 2 linhas fixas → cards com altura igual */
+    .product-card .product-title {
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.4;
+      color: var(--text);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      height: 2.8em;          /* 2 linhas exatas, altura travada */
+      margin-bottom: 12px;
+      word-break: break-word;
+    }
+    /* AJUSTE 2: preço NUNCA quebra de linha */
+    .product-price-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: nowrap;
+      gap: 8px;
+      margin-bottom: 8px;
+      min-width: 0;
+    }
+    .product-price {
+      font-size: 1.2rem;
+      font-weight: 900;
+      color: var(--success);
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+    }
+    /* AJUSTE 3: badge de comissão padronizado (fundo preenchido + borda) */
+    .badge-comissao {
+      background: rgba(255, 87, 34, 0.14);
+      color: #ff7043;
+      border: 1px solid rgba(255, 87, 34, 0.35);
+      font-weight: 700;
+      font-size: 10.5px;
+      padding: 3px 7px;
+      border-radius: 6px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .badge-vendas {
+      background: rgba(0, 230, 118, 0.1);
+      color: var(--success);
+      border: 1px solid rgba(0, 230, 118, 0.28);
+      font-weight: 600;
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+    .est-venda { color: var(--text-muted); font-size: 11.5px; white-space: nowrap; }
+    .btn-preparar {
+      margin-top: auto;
+      background: linear-gradient(135deg, var(--primary), var(--primary-2));
+      color: #fff;
+      font-weight: 700;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 10px 0;
+      font-size: 13.5px;
+      transition: filter .15s ease, transform .1s ease;
+    }
+    .btn-preparar:hover { filter: brightness(1.08); color: #fff; }
+    .btn-preparar:active { transform: scale(0.98); }
+
+    /* ===== Paginação ===== */
+    .pagination-wrap { margin-top: 34px; }
+    .pagination-info {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 14px;
+    }
+    .pagination-info strong { color: var(--text); }
+    .pagination { gap: 5px; flex-wrap: wrap; }
+    .pagination .page-link {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-weight: 600;
+      font-size: 13px;
+      border-radius: var(--radius-sm) !important;
+      min-width: 38px; height: 38px;
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 0 10px;
+      transition: all .15s ease;
+    }
+    .pagination .page-link:hover {
+      background: var(--surface-2);
+      border-color: var(--primary);
+      color: #fff;
+    }
+    .pagination .page-item.active .page-link {
+      background: linear-gradient(135deg, var(--primary), var(--primary-2));
+      border-color: transparent;
+      color: #fff;
+      font-weight: 800;
+      box-shadow: 0 4px 14px rgba(255, 102, 0, 0.35);
+    }
+    .pagination .page-item.disabled .page-link {
+      background: #101317;
+      border-color: var(--border);
+      color: #4a4e55;
+    }
+    .pagination .page-item.disabled .page-link:hover { border-color: var(--border); }
+
+    /* ===== Modal — blocos padronizados ===== */
+    .modal-content {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      overflow: hidden;
+    }
+    .modal-header-ia {
+      background: linear-gradient(135deg, var(--primary), var(--primary-2));
+      border-bottom: none;
+      padding: 12px 18px;
+    }
+    .bloco-ia {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+    .bloco-ia-titulo {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: 12.5px; font-weight: 700;
+      color: var(--primary-2);
+      background: rgba(255, 102, 0, 0.06);
+    }
+    .bloco-ia-corpo { padding: 12px 14px; }
+    .bloco-ia textarea, .bloco-ia input { font-size: 13px; }
+    .form-control-ia {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .form-control-ia:focus {
+      background: var(--surface);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(255, 102, 0, 0.12);
+      color: var(--text);
+    }
+    .btn-copy-outline {
+      background: transparent;
+      color: var(--primary-2);
+      border: 1px solid rgba(255, 102, 0, 0.4);
+      border-radius: 8px;
+      transition: background .15s ease;
+    }
+    .btn-copy-outline:hover { background: rgba(255, 102, 0, 0.1); color: var(--primary-2); }
+    .btn-copy-solid {
+      background: linear-gradient(135deg, var(--primary), var(--primary-2));
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      transition: filter .15s ease;
+    }
+    .btn-copy-solid:hover { filter: brightness(1.08); color: #fff; }
+    .grupo-link {
+      color: var(--primary-2);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .grupo-link:hover { text-decoration: underline; }
+    .hint { color: var(--text-muted); font-size: 11px; }
+    /* AJUSTE 4: botão copiado (feedback visual) */
+    .btn-copiado {
+      background: #00e676 !important;
+      color: #0b0d10 !important;
+      border-color: transparent !important;
+    }
+    /* NOVO: rótulos do bloco SEO do post */
+    .seo-labels {
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 600;
+      display: block;
+      margin-bottom: 4px;
+      letter-spacing: .02em;
+    }
+        /* ===== NOVO: contador de posts de hoje ===== */
+    .progress-stats {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(0, 230, 118, 0.06);
+      border: 1px solid rgba(0, 230, 118, 0.25);
+      border-radius: 999px;
+      padding: 6px 14px;
+      min-width: 175px;
+    }
+    .progress-icon { font-size: 16px; }
+    .progress-info { display: flex; flex-direction: column; line-height: 1.1; }
+    .progress-label {
+      color: var(--text-muted);
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    .progress-value {
+      color: var(--success);
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .progress-track {
+      flex: 1;
+      height: 6px;
+      background: var(--surface-2);
+      border-radius: 999px;
+      overflow: hidden;
+      min-width: 60px;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--success), #69f0ae);
+      border-radius: 999px;
+      transition: width .3s ease;
+    }
+    /* ===== NOVO: botões Já postei / Postado hoje ===== */
+    .btn-marcar-postado {
+      background: transparent;
+      color: var(--success);
+      border: 1px solid rgba(0, 230, 118, 0.4);
+      border-radius: var(--radius-sm);
+      padding: 8px 0;
+      font-size: 12.5px;
+      font-weight: 700;
+      transition: all .15s ease;
+    }
+    .btn-marcar-postado:hover {
+      background: rgba(0, 230, 118, 0.1);
+      color: var(--success);
+    }
+    .btn-postado {
+      background: rgba(0, 230, 118, 0.12);
+      color: var(--success);
+      border: 1px solid rgba(0, 230, 118, 0.35);
+      border-radius: var(--radius-sm);
+      padding: 8px 0;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: default;
+    }
+        /* ===== NOVO: campo de meta diária ajustável ===== */
+    .meta-input-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(148, 163, 184, 0.08);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      border-radius: 999px;
+      padding: 5px 12px;
+    }
+    .meta-input-label {
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .meta-input {
+      width: 46px;
+      background: var(--surface-1);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 6px;
+      color: var(--text-1);
+      font-size: 13px;
+      font-weight: 700;
+      text-align: center;
+      padding: 4px 6px;
+    }
+    .btn-meta-salvar {
+      background: rgba(0, 230, 118, 0.1);
+      color: var(--success);
+      border: none;
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 4px 10px;
+      cursor: pointer;
+      transition: background .15s ease;
+    }
+    .btn-meta-salvar:hover {
+      background: rgba(0, 230, 118, 0.18);
+    }
+        /* ===== NOVO: seletor de quantidade de produtos ===== */
+    .qtd-select-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(148, 163, 184, 0.08);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      border-radius: 999px;
+      padding: 5px 12px;
+    }
+    .qtd-select-label {
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .qtd-select {
+      background: var(--surface-1);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 6px;
+      color: var(--text-1);
+      font-size: 13px;
+      font-weight: 700;
+      padding: 4px 6px;
+      cursor: pointer;
+    }
+        /* ===== NOVO: selo "Em alta" ===== */
+    .badge-em-alta {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: linear-gradient(135deg, #ff8a00, #ff5e3a);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      border-radius: 999px;
+      padding: 3px 10px;
+      margin-left: 6px;
+      box-shadow: 0 2px 8px rgba(255, 94, 58, 0.35);
+      animation: pulso-alta 1.6s ease-in-out infinite;
+    }
+    @keyframes pulso-alta {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.06); }
+    }
+        /* ===== NOVO: barra de filtros do ranking ===== */
+    .filtros-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      background: rgba(148, 163, 184, 0.06);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 12px;
+      padding: 10px 14px;
+      margin-bottom: 16px;
+    }
+    .filtros-label {
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .filtros-input {
+      background: var(--surface-1);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 8px;
+      color: var(--text-1);
+      font-size: 13px;
+      padding: 6px 10px;
+      width: 140px;
+    }
+    .filtros-input::placeholder {
+      color: var(--text-muted);
+      opacity: 0.7;
+    }
+    .btn-filtro-aplicar {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 7px 16px;
+      cursor: pointer;
+    }
+    .btn-filtro-limpar {
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 6px 14px;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .btn-filtro-limpar:hover {
+      color: var(--text-1);
+      border-color: rgba(148, 163, 184, 0.5);
+    }
+    .filtros-resultado {
+      color: var(--text-muted);
+      font-size: 12px;
+      margin: 6px 0 14px;
+    }
+    .em-alta-linha {
+      margin-bottom: 6px;
+    }
+       .filtros-select {
+      background: #1a1e24;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 8px;
+      color: #f2f4f8;
+      font-size: 13px;
+      padding: 6px 10px;
+      width: 210px;
+    }
+    /* Opções do dropdown: o navegador abre em fundo BRANCO → texto escuro legível */
+    .filtros-select option {
+      background: #ffffff;
+      color: #1e293b;
+      font-weight: 500;
+    } 
+  </style>
+</head>
+<body>
+<script>
+/* Função global de segurança de imagens — definida cedo para nunca faltar */
+function imagemProdutoFalhou() {
+    var img = document.getElementById('imagemProdutoModal');
+    var ph = document.getElementById('imagemProdutoPlaceholder');
+    if (img) img.style.display = 'none';
+    if (ph) ph.style.display = 'block';
+}
+</script>  
+{% csrf_token %}
+<div class="container py-4">
+
+  <!-- ===== CABEÇALHO ===== -->
+  <header class="app-header">
+    <div>
+      <h1>
+        <span class="app-logo">⛏️</span>
+        <span>
+          Minerador de Produtos
+          <div class="app-subtitle">Encontre os mais vendidos da Shopee e prepare sua divulgação</div>
+        </span>
+      </h1>
+    </div>
+    <!-- NOVO: badge + botão Atualizar -->
+       <div class="header-actions">
+      {% if total_itens %}
+      <span class="badge-total"><i class="bi bi-box-seam"></i> {{ total_itens }} produtos encontrados</span>
+      {% endif %}
+      <!-- NOVO: contador de posts de hoje com barra de progresso -->
+      <div class="progress-stats" id="contadorPosts" data-meta="{{ meta_diaria }}">
+        <span class="progress-icon">📊</span>
+        <div class="progress-info">
+          <span class="progress-label">Posts hoje</span>
+          <span class="progress-value" id="postsHojeValor">{{ quantidade_posts_hoje }}/{{ meta_diaria }}</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="postsHojeBarra" style="width: {% widthratio quantidade_posts_hoje meta_diaria 100 %}%;"></div>
+        </div>
+      </div>
+            <!-- NOVO: campo de meta diária ajustável -->
+      <div class="meta-input-group" title="Defina quantos posts você quer fazer por dia">
+        <span class="meta-input-label">🎯 Meta diária</span>
+        <input type="number" class="meta-input" id="metaDiariaInput" min="1" max="50" value="{{ meta_diaria }}">
+        <button type="button" class="btn-meta-salvar" id="btnSalvarMeta" onclick="salvarMeta()">Salvar</button>
+      </div>
+            <!-- NOVO: seletor de quantidade de produtos -->
+      <div class="qtd-select-group" title="Quantos produtos buscar na Shopee (máx. 250)">
+        <span class="qtd-select-label">📦 Produtos</span>
+        <select class="qtd-select" id="qtdProdutosSelect" onchange="mudarQuantidade()">
+          <option value="100" {% if total_desejado == 100 %}selected{% endif %}>100</option>
+          <option value="150" {% if total_desejado == 150 %}selected{% endif %}>150</option>
+          <option value="200" {% if total_desejado == 200 %}selected{% endif %}>200</option>
+          <option value="250" {% if total_desejado == 250 %}selected{% endif %}>250</option>
+        </select>
+      </div>
+      <button type="button" class="btn-refresh" id="btnAtualizar" onclick="atualizarProdutos()" title="Buscar os mais vendidos novamente agora">
+        <i class="bi bi-arrow-clockwise"></i> Atualizar
+      </button>
+    </div>
+  </header>
+
+  <!-- ===== BARRA DE BUSCA ===== -->
+  <form method="get" class="search-bar">
+    <div class="input-group">
+      <input type="text" name="q" value="{{ query_atual }}" class="form-control"
+             placeholder="Buscar nicho... Ex: fone bluetooth, cozinha, beleza, casa">
+      <button type="submit" class="btn btn-search">
+        <i class="bi bi-search"></i> Buscar
+      </button>
+    </div>
+  </form>
+
+  <!-- ===== LISTAGEM DE CARDS ===== -->
+        <!-- NOVO: barra de filtros do ranking -->
+      <form method="get" action="" class="filtros-bar" id="filtrosForm">
+        <span class="filtros-label">🔍 Filtrar:</span>
+        <input type="hidden" name="q" value="{{ query_atual }}">
+        <input type="hidden" name="total" value="{{ total_desejado }}">
+        <input type="number" step="0.01" min="0" name="preco_max" value="{{ preco_max|default_if_none:'' }}" class="filtros-input" placeholder="Preço máx (R$)" title="Mostrar só produtos até este preço">
+        <input type="number" step="0.01" min="0" name="comissao_min" value="{{ comissao_min|default_if_none:'' }}" class="filtros-input" placeholder="Comissão mín (%)" title="Comissão mínima em %">
+        <input type="number" step="0.01" min="0" name="venda_min" value="{{ venda_min|default_if_none:'' }}" class="filtros-input" placeholder="R$/venda mín" title="Ganho estimado mínimo por venda">
+        <select name="categoria" class="filtros-select" title="Filtrar por categoria">
+        <option value="">🗂️ Todas as categorias</option>
+                  {% for cat_id, rotulo in categorias_disponiveis %}
+          <option value="{{ cat_id }}" {% if categoria_filtro == cat_id %}selected{% endif %}>{{ rotulo }}</option>
+          {% endfor %} 
+        </select>
+        <button type="submit" class="btn-filtro-aplicar">Aplicar</button>
+        <a href="?q={{ query_atual|urlencode }}&total={{ total_desejado }}" class="btn-filtro-limpar">Limpar</a>
+      </form>
+      {% if total_itens != total_sem_filtro %}
+      <div class="filtros-resultado">
+        🔎 Mostrando <strong>{{ total_itens }}</strong> de <strong>{{ total_sem_filtro }}</strong> produtos
+      </div>
+      {% endif %}
+     <!-- ===== PAGINAÇÃO (TOPO) ===== -->
+  {% if total_paginas > 1 %}
+  <div class="pagination-wrap">
+    <div class="pagination-info">
+      Página <strong>{{ pagina_atual }}</strong> de <strong>{{ total_paginas }}</strong>
+    </div>
+    <nav aria-label="Paginação">
+      <ul class="pagination justify-content-center">
+        <li class="page-item {% if pagina_atual == 1 %}disabled{% endif %}">
+          <a class="page-link" href="?page=1{% if query_atual %}&q={{ query_atual }}{% endif %}{{ filtros_query }}" title="Primeira página">⏮</a>
+        </li>
+        <li class="page-item {% if not pagina_anterior %}disabled{% endif %}">
+          <a class="page-link" href="?page={{ pagina_anterior }}{% if query_atual %}&q={{ query_atual }}{% endif %}{{ filtros_query }}" title="Página anterior">←</a>
+        </li>
+        {% for p in paginas %}
+          {% if p == '...' %}
+          <li class="page-item disabled"><span class="page-link">…</span></li>
+          {% else %}
+          <li class="page-item {% if p == pagina_atual %}active{% endif %}">
+            <a class="page-link" href="?page={{ p }}{% if query_atual %}&q={{ query_atual }}{% endif %}{{ filtros_query }}">{{ p }}</a>
+          </li>
+          {% endif %}
+        {% endfor %}
+        <li class="page-item {% if not proxima_pagina %}disabled{% endif %}">
+          <a class="page-link" href="?page={{ proxima_pagina }}{% if query_atual %}&q={{ query_atual }}{% endif %}{{ filtros_query }}" title="Próxima página">→</a>
+        </li>
+        <li class="page-item {% if pagina_atual == total_paginas %}disabled{% endif %}">
+          <a class="page-link" href="?page={{ total_paginas }}{% if query_atual %}&q={{ query_atual }}{% endif %}{{ filtros_query }}" title="Última página">⏭</a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+  {% endif %}
+     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4 mb-5">
+    {% for produto in produtos %}
+    <div class="col">
+      <div class="product-card">
+        <img src="{{ produto.imagem }}" class="thumb" alt="{{ produto.titulo }}">
+        <div class="card-body">
+                  {% if produto.em_alta %}
+          <div class="em-alta-linha"><span class="badge-em-alta">{% if produto.tipo_alta == 'vendas' %}🔥 +{{ produto.delta_vendas }} vendas{% elif produto.tipo_alta == 'subiu' %}🔥 +{{ produto.subida }} posições{% else %}🔥 Novo no ranking{% endif %}</span></div>
+          {% endif %}
+          <h6 class="product-title">{{ produto.titulo }}</h6> 
+          <div class="product-price-row">
+            <span class="product-price">R$ {{ produto.preco }}</span>
+            {% if produto.comissao %}
+              <span class="badge-comissao">{{ produto.comissao }}% Comis.</span>
+            {% endif %}
+          </div>
+          {% if produto.vendas %}
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge-vendas"><i class="bi bi-fire"></i> {{ produto.vendas }} vendas</span>
+            {% if produto.comissao_estimada %}
+              <span class="est-venda">~R$ {{ produto.comissao_estimada }}/venda</span>
+            {% endif %}
+          </div>
+          {% endif %}
+          <button type="button"
+                  class="btn btn-preparar w-100 d-flex align-items-center justify-content-center gap-2 btn-abrir-modal"
+                  data-bs-toggle="modal"
+                  data-bs-target="#modalGeradorIA"
+                  data-item-id="{{ produto.item_id }}"
+                  data-titulo="{{ produto.titulo }}"
+                  data-preco="{{ produto.preco }}"
+                  data-imagem="{{ produto.imagem }}"
+                  data-link="{{ produto.link_afiliado }}">
+            ✨ Preparar com IA
+          </button>
+                    {% if produto.item_id in posts_hoje_ids %}
+          <button type="button" class="btn btn-postado w-100 mt-2" disabled>
+            ✅ Postado hoje
+          </button>
+          {% else %}
+          <button type="button" class="btn btn-marcar-postado w-100 mt-2 btn-marcar" data-item-id="{{ produto.item_id }}" data-titulo="{{ produto.titulo }}">
+            📌 Já postei
+          </button>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center text-muted py-5">
+      <p>Nenhum produto encontrado no momento.</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- ===== PAGINAÇÃO ===== -->
+  {% if total_paginas > 1 %}
+  <div class="pagination-wrap">
+    <div class="pagination-info">
+      Página <strong>{{ pagina_atual }}</strong> de <strong>{{ total_paginas }}</strong>
+    </div>
+    <nav aria-label="Paginação">
+      <ul class="pagination justify-content-center">
+        <li class="page-item {% if pagina_atual == 1 %}disabled{% endif %}">
+          <a class="page-link" href="?page=1{% if query_atual %}&q={{ query_atual }}{% endif %}{{ filtros_query }}" title="Primeira página">⏮</a>
+        </li>
+        <li class="page-item {% if not pagina_anterior %}disabled{% endif %}">
+          <a class="page-link" href="?page={{ pagina_anterior }}{% if query_atual %}&q={{ query_atual }}{% endif %}{{ filtros_query }}" title="Página anterior">←</a>
+        </li>
+        {% for p in paginas %}
+          {% if p == '...' %}
+          <li class="page-item disabled"><span class="page-link">…</span></li>
+          {% else %}
+          <li class="page-item {% if p == pagina_atual %}active{% endif %}">
+            <a class="page-link" href="?page={{ p }}{% if query_atual %}&q={{ query_atual }}{% endif %}{{ filtros_query }}">{{ p }}</a>
+          </li>
+          {% endif %}
+        {% endfor %}
+        <li class="page-item {% if not proxima_pagina %}disabled{% endif %}">
+          <a class="page-link" href="?page={{ proxima_pagina }}{% if query_atual %}&q={{ query_atual }}{% endif %}{{ filtros_query }}" title="Próxima página">→</a>
+        </li>
+        <li class="page-item {% if pagina_atual == total_paginas %}disabled{% endif %}">
+          <a class="page-link" href="?page={{ total_paginas }}{% if query_atual %}&q={{ query_atual }}{% endif %}{{ filtros_query }}" title="Última página">⏭</a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ============ MODAL DO GERADOR DE IA (V9 - GRADE 2x2) ============ -->
+<div class="modal fade" id="modalGeradorIA" tabindex="-1" aria-labelledby="modalGeradorIALabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header modal-header-ia">
+        <h5 class="modal-title d-flex align-items-center gap-2 fw-bold" id="modalGeradorIALabel" style="color: #fff; font-size: 15px;">
+          🎬 Material pronto para divulgar
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body">
+        <h6 id="modalProdutoTitulo" class="fw-bold text-white mb-3" style="font-size: 14px; line-height: 1.4; word-wrap: break-word; white-space: normal;"></h6>
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+          <span class="badge rounded-pill" id="modalProdutoPreco"
+                style="background-color: rgba(0, 230, 118, 0.12); color: #00e676; border: 1px solid rgba(0, 230, 118, 0.3); font-weight: 600; font-size: 14px;">
+            R$ 0,00
+          </span>
+          <span class="badge rounded-pill" id="nichoBadge" style="display: none; background-color: rgba(255, 102, 0, 0.12); color: #ff8c33; border: 1px solid rgba(255, 102, 0, 0.35); font-weight: 600; font-size: 14px;">
+            🏷️ <span id="nichoModal"></span>
+          </span>
+        </div>
+
+        <div class="row g-3 mb-1">
+          <div class="col-md-6">
+            <div class="bloco-ia h-100">
+              <div class="bloco-ia-titulo"><i class="bi bi-image"></i> Imagem</div>
+              <div class="bloco-ia-corpo text-center">
+                <img id="imagemProdutoModal" src="" alt="Imagem do produto"
+                     onerror="imagemProdutoFalhou()"
+                     style="display: none; width: 100%; max-width: 160px; border-radius: 10px; border: 1px solid #262b33; margin: 0 auto;">
+                <div id="imagemProdutoPlaceholder" style="display: block; color: #8b93a1; font-size: 12px; border: 1px dashed #262b33; border-radius: 10px; padding: 16px;">
+                  🖼️ Sem imagem
+                </div>
+                <small class="hint d-block mt-2">Clique com o botão direito na imagem para copiar e colar no Google Flow.</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="bloco-ia h-100">
+              <div class="bloco-ia-titulo"><i class="bi bi-film"></i> Prompt de vídeo</div>
+              <div class="bloco-ia-corpo">
+                <textarea class="form-control form-control-ia" id="promptVideoModal" rows="5" readonly></textarea>
+                <div class="d-flex justify-content-end flex-wrap gap-2 mt-2">
+                  <button type="button" class="btn btn-sm fw-bold d-inline-flex align-items-center gap-1 btn-copy-outline" id="btnCopiarPrompt" onclick="copiarPromptVideo(this)">
+                    <i class="bi bi-clipboard"></i> Copiar prompt
+                  </button>
+                  <button type="button" class="btn btn-sm fw-bold d-inline-flex align-items-center gap-1 btn-copy-solid" onclick="abrirGoogleFlow()">
+                    🎬 Abrir no Google Flow
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-3 mb-1">
+          <div class="col-md-6">
+            <div class="bloco-ia h-100">
+              <div class="bloco-ia-titulo"><i class="bi bi-chat-left-text"></i> Post (Facebook)</div>
+              <div class="bloco-ia-corpo">
+                <textarea class="form-control form-control-ia" id="copyResultadoModal" rows="4" readonly></textarea>
+                <div class="d-flex justify-content-end mt-2">
+                  <button type="button" class="btn btn-sm fw-bold d-inline-flex align-items-center gap-1 btn-copy-solid" id="btnCopiarLegenda" onclick="copiarLegendaComLink(this)">
+                    <i class="bi bi-clipboard"></i> Copiar legenda + link
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="bloco-ia h-100">
+              <div class="bloco-ia-titulo"><i class="bi bi-people"></i> Grupos do Facebook</div>
+              <div class="bloco-ia-corpo">
+                <ul id="gruposModal" style="list-style: none; padding: 0; margin: 0;"></ul>
+                <small class="hint d-block mt-1">Clique em um termo para buscar grupos do nicho no Facebook.</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bloco-ia">
+          <div class="bloco-ia-titulo"><i class="bi bi-link-45deg"></i> Link de afiliado</div>
+          <div class="bloco-ia-corpo">
+            <div class="input-group">
+              <input type="text" class="form-control form-control-ia" id="linkAfiliadoModal" readonly style="border-right: none;">
+              <button type="button" class="btn btn-warning fw-bold" id="btnCopiarLink" onclick="copiarLinkAfiliado(this)" style="border-radius: 0 8px 8px 0; white-space: nowrap;">Copiar</button>
+            </div>
+            <small class="hint d-block mt-1">Use SEMPRE este link nos seus posts — é ele que garante sua comissão.</small>
+          </div>
+        </div>
+
+                <!-- NOVO: SEO do post (hashtags + palavras-chave) -->
+        <div class="bloco-ia">
+          <div class="bloco-ia-titulo">
+            <i class="bi bi-tags"></i> SEO do post (Shopee Vídeo)
+          </div>
+          <div class="bloco-ia-corpo">
+            <div class="row g-2">
+              <div class="col-md-6">
+                <label class="seo-labels" for="hashtagsModal">Hashtags</label>
+                <div class="input-group input-group-sm">
+                  <input type="text" class="form-control form-control-ia" id="hashtagsModal" readonly placeholder="#achadinhoshope #oferta...">
+                  <button type="button" class="btn btn-sm fw-bold btn-copy-solid" id="btnCopiarHashtags" onclick="copiarHashtags(this)" style="border-radius: 0 8px 8px 0; white-space: nowrap;">Copiar</button>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="seo-labels" for="palavrasChaveModal">Palavras-chave</label>
+                <div class="input-group input-group-sm">
+                  <input type="text" class="form-control form-control-ia" id="palavrasChaveModal" readonly placeholder="produto, promoção, oferta...">
+                  <button type="button" class="btn btn-sm fw-bold btn-copy-solid" id="btnCopiarPalavras" onclick="copiarPalavrasChave(this)" style="border-radius: 0 8px 8px 0; white-space: nowrap;">Copiar</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- NOVO: Prompt Shopee Vídeo (diretrizes à risca, sem tempos de cena) -->
+        <div class="bloco-ia">
+          <div class="bloco-ia-titulo">
+            <i class="bi bi-shop"></i> Prompt Shopee Vídeo
+          </div>
+          <div class="bloco-ia-corpo">
+            <textarea class="form-control form-control-ia" id="promptShopeeModal" rows="4" readonly placeholder="Clique em 'Gerar prompt Shopee Vídeo' para criar o prompt seguindo as diretrizes da plataforma."></textarea>
+            <div class="d-flex justify-content-end flex-wrap gap-2 mt-2">
+              <button type="button" class="btn btn-sm fw-bold d-inline-flex align-items-center gap-1 btn-copy-outline" id="btnCopiarPromptShopee" onclick="copiarPromptShopee(this)">
+                <i class="bi bi-clipboard"></i> Copiar prompt
+              </button>
+              <button type="button" class="btn btn-sm fw-bold d-inline-flex align-items-center gap-1 btn-copy-solid" id="btnGerarPromptShopee" onclick="gerarPromptShopee()">
+                🎬 Gerar prompt Shopee Vídeo
+              </button>
+            </div>
+            <small class="hint d-block mt-2">Seguindo as diretrizes da Shopee Vídeo: vertical 9:16, 1 produto, produto idêntico ao link, sem marca d'água de outras plataformas. Sem tempos de cena — adapte à duração da sua ferramenta (Google Flow 10s, YouTube Create 8s).</small>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer border-secondary justify-content-between">
+        <div class="d-flex align-items-center gap-3">
+          <a href="#" onclick="abrirVitrine(); return false;" class="small text-warning text-decoration-none" style="font-size: 12px; white-space: nowrap;">
+            🛍️ Abrir minha Vitrine Shopee
+          </a>
+          <button type="button" class="btn btn-outline-light btn-sm d-inline-flex align-items-center gap-1" id="btnGerarGemini" onclick="solicitarGemini()">
+            <i class="bi bi-arrow-clockwise"></i> Atualizar
+          </button>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts JS Bootstrap -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+/* ===== NOVO: gerar prompt Shopee Vídeo (diretrizes à risca) ===== */
+function gerarPromptShopee() {
+    const btn = document.getElementById('btnGerarPromptShopee');
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Gerando...`;
+    const formData = new FormData();
+    formData.append('nome', produtoAtual.titulo);
+    formData.append('nicho', '');
+    fetch('/api/gerar-prompt-shopee/', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCookie('csrftoken') },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = `🎬 Gerar prompt Shopee Vídeo`;
+        if (data.status === 'sucesso') {
+            document.getElementById('promptShopeeModal').value = data.prompt_shopee || '';
+        } else {
+            alert('Erro ao gerar prompt Shopee: ' + (data.mensagem || 'Tente novamente.'));
+        }
+    })
+    .catch(() => {
+        btn.disabled = false;
+        btn.innerHTML = `🎬 Gerar prompt Shopee Vídeo`;
+        alert('Erro de conexão ao gerar prompt Shopee. Tente novamente.');
+    });
+}
+function copiarPromptShopee(botao) {
+    const prompt = document.getElementById('promptShopeeModal').value;
+    if (copiarTextoConfiavel(prompt)) {
+        if (botao) mostrarCopiado(botao, `<i class="bi bi-clipboard"></i> Copiar prompt`);
+    } else {
+        alert('Não foi possível copiar. Selecione o texto e copie com Ctrl+C.');
+    }
+}
+
+let produtoAtual = {};
+function exibirImagemProduto(url) {
+    const img = document.getElementById('imagemProdutoModal');
+    const placeholder = document.getElementById('imagemProdutoPlaceholder');
+    if (url && url.trim() !== '') {
+        img.src = url;
+        img.style.display = 'block';
+        placeholder.style.display = 'none';
+    } else {
+        img.style.display = 'none';
+        placeholder.style.display = 'block';
+    }
+}
+function imagemProdutoFalhou() {
+    const img = document.getElementById('imagemProdutoModal');
+    const placeholder = document.getElementById('imagemProdutoPlaceholder');
+    img.style.display = 'none';
+    placeholder.style.display = 'block';
+}
+document.addEventListener('DOMContentLoaded', function () {
+    const botoesModal = document.querySelectorAll('.btn-abrir-modal');
+    botoesModal.forEach(botao => {
+        botao.addEventListener('click', function () {
+            produtoAtual = {
+                item_id: this.getAttribute('data-item-id') || '',
+                titulo: this.getAttribute('data-titulo') || '',
+                preco: this.getAttribute('data-preco') || '0,00',
+                imagem: this.getAttribute('data-imagem') || '',
+                link: this.getAttribute('data-link') || ''
+            };
+            document.getElementById('modalProdutoTitulo').textContent = produtoAtual.titulo;
+            document.getElementById('modalProdutoPreco').textContent = 'R$ ' + produtoAtual.preco;
+            document.getElementById('copyResultadoModal').value = '';
+            document.getElementById('promptVideoModal').value = '';
+            document.getElementById('linkAfiliadoModal').value = '';
+            document.getElementById('nichoModal').textContent = '';
+            document.getElementById('nichoBadge').style.display = 'none';
+            document.getElementById('gruposModal').innerHTML = '';
+            /* NOVO: limpa os campos de SEO ao abrir o modal */
+            document.getElementById('hashtagsModal').value = '';
+            document.getElementById('palavrasChaveModal').value = '';
+            exibirImagemProduto(produtoAtual.imagem);
+            solicitarGemini();
+        });
+    });
+});
+function solicitarGemini() {
+    const btn = document.getElementById('btnGerarGemini');
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Gerando...`;
+    const formData = new FormData();
+    formData.append('item_id', produtoAtual.item_id);
+    formData.append('nome', produtoAtual.titulo);
+    formData.append('link_original', produtoAtual.link);
+    formData.append('imagem_url', produtoAtual.imagem);
+    formData.append('nicho', '');
+    fetch('/api/salvar-preparar/', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCookie('csrftoken') },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="bi bi-arrow-clockwise"></i> Atualizar`;
+        if (data.status === 'sucesso') {
+            if (data.nicho_detectado) {
+                document.getElementById('nichoModal').textContent = data.nicho_detectado;
+                document.getElementById('nichoBadge').style.display = 'inline-flex';
+            }
+            document.getElementById('copyResultadoModal').value = data.copy_vendas || '';
+            document.getElementById('promptVideoModal').value = data.prompt_ia || '';
+            if (data.link_afiliado) {
+                produtoAtual.link = data.link_afiliado;
+                document.getElementById('linkAfiliadoModal').value = data.link_afiliado;
+            }
+            if (data.imagem_url) {
+                produtoAtual.imagem = data.imagem_url;
+                exibirImagemProduto(data.imagem_url);
+            }
+            /* NOVO: preenche hashtags e palavras-chave vindas do Gemini */
+            document.getElementById('hashtagsModal').value = (data.hashtags || []).join(' ');
+            document.getElementById('palavrasChaveModal').value = (data.palavras_chave || []).join(', ');
+            const ul = document.getElementById('gruposModal');
+            ul.innerHTML = '';
+            (data.grupos_sugeridos || []).forEach(g => {
+                const li = document.createElement('li');
+                li.style.marginBottom = '6px';
+                const a = document.createElement('a');
+                a.href = g.link_grupo || '#';
+                a.target = '_blank';
+                a.rel = 'noopener';
+                a.title = 'Buscar no Facebook: ' + (g.nome || '');
+                a.className = 'grupo-link';
+                a.textContent = `👥 ${g.nome} ↗`;
+                li.appendChild(a);
+                ul.appendChild(li);
+            });
+        } else {
+            alert('Erro ao consultar a IA Gemini: ' + (data.mensagem || 'Tente novamente.'));
+        }
+    })
+    .catch(error => {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="bi bi-arrow-clockwise"></i> Atualizar`;
+        console.error('Erro na requisição Gemini:', error);
+        alert('Erro de conexão ao gerar conteúdo. Tente novamente.');
+    });
+}
+function copiarTextoConfiavel(texto) {
+    if (navigator.clipboard && window.isSecureContext) {
+        try {
+            navigator.clipboard.writeText(texto);
+            return true;
+        } catch (e) { }
+    }
+    try {
+        const areaTemporaria = document.createElement('textarea');
+        areaTemporaria.value = texto;
+        areaTemporaria.style.position = 'fixed';
+        areaTemporaria.style.top = '0';
+        areaTemporaria.style.left = '-9999px';
+        areaTemporaria.setAttribute('readonly', '');
+        document.body.appendChild(areaTemporaria);
+        areaTemporaria.focus();
+        areaTemporaria.select();
+        areaTemporaria.setSelectionRange(0, texto.length);
+        const copiou = document.execCommand('copy');
+        document.body.removeChild(areaTemporaria);
+        return copiou;
+    } catch (e) {
+        console.error('Falha ao copiar:', e);
+        return false;
+    }
+}
+/* AJUSTE 4: feedback visual no botão após copiar (vira "✓ Copiado!" por 2s) */
+function mostrarCopiado(botao, textoOriginal) {
+    if (!botao) return;
+    botao.classList.add('btn-copiado');
+    botao.innerHTML = `✓ Copiado!`;
+    setTimeout(() => {
+        botao.classList.remove('btn-copiado');
+        botao.innerHTML = textoOriginal;
+    }, 2000);
+}
+/* NOVO: copiar hashtags */
+function copiarHashtags(botao) {
+    const valor = document.getElementById('hashtagsModal').value;
+    if (copiarTextoConfiavel(valor)) {
+        if (botao) mostrarCopiado(botao, `Copiar`);
+    } else {
+        alert('Não foi possível copiar. Selecione o texto e copie com Ctrl+C.');
+    }
+}
+/* NOVO: copiar palavras-chave */
+function copiarPalavrasChave(botao) {
+    const valor = document.getElementById('palavrasChaveModal').value;
+    if (copiarTextoConfiavel(valor)) {
+        if (botao) mostrarCopiado(botao, `Copiar`);
+    } else {
+        alert('Não foi possível copiar. Selecione o texto e copie com Ctrl+C.');
+    }
+}
+/* NOVO: botão Atualizar — recarrega re-buscando os mais vendidos */
+function atualizarProdutos() {
+    const btn = document.getElementById('btnAtualizar');
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Atualizando...`;
+    const url = new URL(window.location.href);
+    url.searchParams.set('page', '1');
+    url.searchParams.set('refresh', String(Date.now()));
+    window.location.href = url.toString();
+}
+function abrirGoogleFlow() {
+    window.open('https://labs.google/fx/pt/tools/flow/project/280e0a1c-3bdd-4050-aa40-af2dfdcce5cb', '_blank');
+}
+function copiarLegendaComLink(botao) {
+    const legenda = document.getElementById('copyResultadoModal').value;
+    const link = document.getElementById('linkAfiliadoModal').value;
+    const texto = legenda + (link ? '\n\n🛒 Link: ' + link : '');
+    if (copiarTextoConfiavel(texto)) {
+        if (botao) mostrarCopiado(botao, `<i class="bi bi-clipboard"></i> Copiar legenda + link`);
+    } else {
+        alert('Não foi possível copiar. Selecione o texto e copie com Ctrl+C.');
+    }
+}
+function copiarPromptVideo(botao) {
+    const prompt = document.getElementById('promptVideoModal').value;
+    if (copiarTextoConfiavel(prompt)) {
+        if (botao) mostrarCopiado(botao, `<i class="bi bi-clipboard"></i> Copiar prompt`);
+    } else {
+        alert('Não foi possível copiar. Selecione o texto e copie com Ctrl+C.');
+    }
+}
+function copiarLinkAfiliado(botao) {
+    const link = document.getElementById('linkAfiliadoModal').value;
+    if (copiarTextoConfiavel(link)) {
+        if (botao) mostrarCopiado(botao, `Copiar`);
+    } else {
+        alert('Não foi possível copiar. Selecione o link e copie com Ctrl+C.');
+    }
+}
+function abrirVitrine() {
+    window.open('https://collshp.com/acheieindico_br669?view=storefront', '_blank');
+}
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+/* ===== NOVO (Melhoria 1): marcar produto como postado hoje ===== */
+function atualizarContadorPosts(quantidade) {
+    const contador = document.getElementById('contadorPosts');
+    const meta = parseInt(contador.getAttribute('data-meta') || '5', 10);
+    document.getElementById('postsHojeValor').textContent = quantidade + '/' + meta;
+    const pct = Math.min(100, Math.round((quantidade / meta) * 100));
+    document.getElementById('postsHojeBarra').style.width = pct + '%';
+}
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.btn-marcar').forEach(botao => {
+        botao.addEventListener('click', function () {
+            const itemId = this.getAttribute('data-item-id');
+            const nome = this.getAttribute('data-titulo') || '';
+            if (!itemId) return;
+            this.disabled = true;
+            this.innerHTML = '⏳ Registrando...';
+            const formData = new FormData();
+            formData.append('item_id', itemId);
+            formData.append('nome', nome);
+            fetch('/api/marcar-postado/', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'sucesso') {
+                    botao.classList.remove('btn-marcar-postado');
+                    botao.classList.add('btn-postado');
+                    botao.disabled = true;
+                    botao.innerHTML = '✅ Postado hoje';
+                    atualizarContadorPosts(data.quantidade_posts_hoje);
+                } else {
+                    botao.disabled = false;
+                    botao.innerHTML = '📌 Já postei';
+                    alert('Erro ao registrar: ' + (data.mensagem || 'Tente novamente.'));
+                }
+            })
+            .catch(() => {
+                botao.disabled = false;
+                botao.innerHTML = '📌 Já postei';
+                alert('Erro de conexão ao registrar. Tente novamente.');
+            });
+        });
+    });
+});
+/* ===== NOVO (Meta diária ajustável): salvar meta e atualizar contador ===== */
+function salvarMeta() {
+    const input = document.getElementById('metaDiariaInput');
+    const btn = document.getElementById('btnSalvarMeta');
+    let meta = parseInt(input.value, 10);
+
+    if (isNaN(meta) || meta < 1) meta = 1;
+    if (meta > 50) meta = 50;
+    input.value = meta;
+
+    btn.disabled = true;
+    btn.textContent = 'Salvando...';
+
+    const formData = new FormData();
+    formData.append('meta', meta);
+
+    fetch('/api/definir-meta/', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCookie('csrftoken') },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        btn.disabled = false;
+        btn.textContent = 'Salvar';
+        if (data.status === 'sucesso') {
+            // Atualiza a meta guardada no contador e recalcula a barra
+            const contador = document.getElementById('contadorPosts');
+            contador.setAttribute('data-meta', data.meta_diaria);
+            // Lê a quantidade atual do texto (ex.: "3/5" -> 3)
+            const textoAtual = document.getElementById('postsHojeValor').textContent;
+            const quantidadeAtual = parseInt(textoAtual.split('/')[0], 10) || 0;
+            atualizarContadorPosts(quantidadeAtual);
+        } else {
+            alert('Erro ao salvar meta: ' + (data.mensagem || 'Tente novamente.'));
+        }
+    })
+    .catch(() => {
+        btn.disabled = false;
+        btn.textContent = 'Salvar';
+        alert('Erro de conexão ao salvar a meta. Tente novamente.');
+    });
+}
+
+/* Enter no campo de meta também salva (atalho) */
+document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('metaDiariaInput').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            salvarMeta();
+        }
+    });
+});
+/* ===== NOVO (Quantidade de produtos): trocar quantidade recarrega a página ===== */
+function mudarQuantidade() {
+    const select = document.getElementById('qtdProdutosSelect');
+    const qtd = select.value;
+    // Monta a URL atual, troca o parâmetro "total" e volta para a página 1
+    const url = new URL(window.location.href);
+    url.searchParams.set('total', qtd);
+    url.searchParams.set('page', '1');
+    window.location.href = url.toString();
+}
+</script>
+</body>
+</html>
