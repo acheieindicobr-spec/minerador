@@ -1,10 +1,23 @@
 """
 Integracao com a API de Afiliados da Shopee (GraphQL).
 Busca a LISTA GERAL de ofertas, ordena por MAIS VENDIDOS e junta varias paginas.
+v3.2 — melhorias finais:
+  - Sanitizacao da keyword (corrige busca vazia com titulo colado).
+  - Fallback para a lista geral quando a busca retorna vazio OU poucos itens.
+  - Fallback manda keyword=null (nao "") — evita rejeicao da API.
+  - _campanha_ativa protegida contra formato inesperado de periodEndTime.
+  - _converter_vendas agora trata "1.234,56" (formato brasileiro completo).
+  - _calcular_score com guard: commissionRate em percentual (26) nao e
+    multiplicado por 100 de novo (aceita fracao 0.26 OU percentual 26).
+  - salvar_produtos grava a primeira productCatIds no campo categoria.
+  - Score de divulgacao rebalanceado: vendas dominam o ranking (peso 25).
+  - Filtro de campanhas vencidas (nao divulgar oferta que nao paga mais).
+  - PADRAO de ordenacao e "vendas" (aba Mais Vendidos mostra os mais vendidos).
 """
 import hashlib
 import json
 import logging
+import math
 import os
 import re
 import time
@@ -17,12 +30,11 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 API_URL = "https://open-api.affiliate.shopee.com.br/graphql"
-
 PAUSA_ENTRE_PAGINAS = 2    # segundos — anti-bloqueio
 MAX_PAGINAS = 5
 LIMITE_PADRAO = 50
 
-# Palavras que não ajudam na busca (ruído de títulos colados)
+# Palavras que nao ajudam na busca (ruido de titulos colados)
 PALAVRAS_RUIDO = {
     "com", "de", "da", "do", "das", "dos", "para", "em", "no", "na",
     "um", "uma", "uns", "umas", "kit", "original", "novo", "nova",
@@ -38,7 +50,6 @@ class ShopeeService:
             raise ValueError("SHOPEE_APP_ID e/ou SHOPEE_SECRET nao configurados.")
 
     # ---------- Assinatura ----------
-
     def _gerar_headers(self, payload_str):
         timestamp = int(time.time())
         factor = f"{self.app_id}{timestamp}{payload_str}{self.secret}"
@@ -49,7 +60,6 @@ class ShopeeService:
         }
 
     # ---------- Requisicao GraphQL centralizada ----------
-
     def _fazer_requisicao_graphql(self, query, variables=None):
         """Executa a query e devolve o dict de sucesso, ou None em qualquer falha."""
         payload = {"query": query}
@@ -80,16 +90,13 @@ class ShopeeService:
         return dados
 
     # ---------- Sanitizacao da keyword (corrige busca vazia) ----------
-
     @staticmethod
     def _sanitizar_keyword(keyword):
         """
         Limpa o termo de busca antes de mandar para a API.
-
         PROBLEMA REAL: o usuario cola o TITULO COMPLETO do produto (ex.:
         "Calcinha de Emagrecimento / Cinta Modeladora / Roupa Intima / Afina
         a Barriga Leggings Calca Feminina 2024") e a API retorna 0 resultados.
-
         Estrategia:
           1. Pega so a parte ANTES da primeira barra "/" (titulos colados
              usam barras para separar variacoes).
@@ -118,10 +125,10 @@ class ShopeeService:
         return " ".join(palavras)
 
     # ---------- Conversao de vendas ----------
-
     @staticmethod
     def _converter_vendas(vendas):
-        """Converte '34 mil', '27,1mil', '1.2k', '1.200', int ou float para int."""
+        """Converte '34 mil', '27,1mil', '1.2k', '1.200', '1.234,56',
+        int ou float para int."""
         if vendas is None:
             return 0
         if isinstance(vendas, (int, float)):
@@ -137,7 +144,14 @@ class ShopeeService:
         elif texto.endswith("m"):
             multiplicador = 1000000
             texto = texto[:-1]
-        # separador de milhar pt-BR sem sufixo: "1.200" -> 1200
+        # Formato brasileiro completo: "1.234,56" -> 1234.56
+        if "," in texto and "." in texto:
+            texto = texto.replace(".", "").replace(",", ".")
+            try:
+                return int(float(texto) * multiplicador)
+            except (ValueError, TypeError):
+                return 0
+        # Separador de milhar pt-BR sem sufixo: "1.200" -> 1200
         if multiplicador == 1 and "," not in texto and texto.count(".") >= 1:
             partes = texto.split(".")
             if all(p.isdigit() for p in partes):
@@ -147,12 +161,51 @@ class ShopeeService:
         except Exception:
             return 0
 
-    # ---------- Busca de UMA pagina ----------
+    # ---------- Score de divulgacao (v3 — vendas dominam) ----------
+    def _calcular_score(self, produto):
+        """Versao REBALANCEADA: vendas dominam o ranking (peso 25 no log10).
+        Guard de comissao: aceita fracao (0.26) OU percentual (26) — nunca
+        multiplica por 100 duas vezes.
+        """
+        vendas = produto.get("sales") or 0
+        try:
+            comissao_pct = float(produto.get("commissionRate") or 0)
+        except (ValueError, TypeError):
+            comissao_pct = 0.0
+        if 0 < comissao_pct <= 1:
+            comissao_pct = comissao_pct * 100  # fracao -> percentual
+        try:
+            rating = float(produto.get("ratingStar") or 0)
+        except (ValueError, TypeError):
+            rating = 0.0
+        score_vendas = math.log10(vendas + 1) * 25
+        score_comissao = min(comissao_pct * 1.5, 45)
+        score_rating = min(rating * 6, 30)
+        return round(score_vendas + score_comissao + score_rating, 2)
 
+    # ---------- Campanha ativa (Opcao 3) ----------
+    @staticmethod
+    def _campanha_ativa(produto, agora=None):
+        """True se a oferta de afiliado ainda esta no periodo valido.
+        periodEndTime vem como timestamp (epoch em segundos).
+        Protegido: se o campo vier em formato inesperado, considera ativa."""
+        try:
+            fim = int(produto.get("periodEndTime") or 0)
+        except (ValueError, TypeError):
+            fim = 0
+        if fim <= 0:
+            return True  # sem data de fim -> considera ativa
+        if agora is None:
+            agora = int(time.time())
+        return fim > agora
+
+    # ---------- Busca de UMA pagina ----------
     def _buscar_pagina(self, page=1, limite=LIMITE_PADRAO, keyword=""):
         """
         sortType 2 = ordenado por MAIS VENDIDOS (ranking do painel).
         keyword vazio = LISTA GERAL de ofertas.
+        keyword vazia vira null (nao "") — a API trata null como
+        "sem filtro"; "" pode ser rejeitada e derrubar o fallback.
         """
         query = """query ProductOfferV2($keyword: String, $page: Int, $limit: Int) {
   productOfferV2(keyword: $keyword, page: $page, limit: $limit, listType: 0, sortType: 2) {
@@ -170,10 +223,22 @@ class ShopeeService:
       offerLink
       ratingStar
       priceDiscountRate
+      appNewRate
+      webNewRate
+      appExistRate
+      webExistRate
+      sellerCommissionRate
+      shopeeCommissionRate
+      periodStartTime
+      periodEndTime
+      shopId
+      shopType
+      priceMin
+      priceMax
     }
   }
 }"""
-        variables = {"keyword": keyword, "page": page, "limit": limite}
+        variables = {"keyword": keyword or None, "page": page, "limit": limite}
         dados = self._fazer_requisicao_graphql(query, variables)
         nodes = []
         if dados:
@@ -183,17 +248,22 @@ class ShopeeService:
         return nodes
 
     # ---------- Busca multiplas paginas + ranking (metodo principal) ----------
-
     def buscar_mais_vendidos(self, nicho="", total_desejado=100,
-                             limite_por_pagina=LIMITE_PADRAO):
-        """Junta varias paginas, deduplica por itemId, ordena por vendas.
-        Sanitiza a keyword e, se a busca retornar vazio, cai na lista geral."""
+                             limite_por_pagina=LIMITE_PADRAO,
+                             ordenar_por="vendas",          # PADRAO E "vendas"
+                             filtrar_campanha_vencida=True,
+                             minimo_para_fallback=10):      # fallback com poucos resultados
+        """Junta varias paginas, deduplica por itemId e ordena.
+        ordenar_por: "vendas" (mais vendidos de verdade) ou "score" (divulgacao).
+        filtrar_campanha_vencida: remove ofertas fora do periodo de comissao.
+        minimo_para_fallback: se a busca por keyword retornar MENOS que isso,
+        tenta a LISTA GERAL (evita dashboard com 2 produtos).
+        """
         keyword = self._sanitizar_keyword(nicho)
         produtos_por_id = {}
         paginas = min(MAX_PAGINAS, max(1, -(-total_desejado // limite_por_pagina)))
 
         def coletar_paginas(keyword_busca):
-            """Coleta as paginas de uma keyword e devolve o dict de produtos."""
             coletados = {}
             for page in range(1, paginas + 1):
                 try:
@@ -217,15 +287,41 @@ class ShopeeService:
         # 1a tentativa: com a keyword sanitizada
         produtos_por_id = coletar_paginas(keyword)
 
-        # FALLBACK: busca vazia -> tenta a LISTA GERAL (keyword vazia).
-        # Assim o usuario nunca mais ve "Nenhum produto" sem motivo,
-        # mesmo colando um titulo gigante.
-        if not produtos_por_id and keyword:
-            logger.info("[SHOPEE] Busca '%s' vazia — tentando lista geral", keyword)
+        # FALLBACK MELHORADO: busca vazia OU com poucos resultados -> lista geral
+        if keyword and len(produtos_por_id) < minimo_para_fallback:
+            logger.info("[SHOPEE] Busca '%s' retornou apenas %d item(ns) — tentando lista geral",
+                        keyword, len(produtos_por_id))
             produtos_por_id = coletar_paginas("")
 
         produtos = list(produtos_por_id.values())
-        produtos.sort(key=lambda p: p.get("sales") or 0, reverse=True)
+
+        # Opcao 3: marca campanha ativa/vencida e enriquece com campos novos
+        agora = int(time.time())
+        for p in produtos:
+            p["campanha_ativa"] = self._campanha_ativa(p, agora)
+            p["score"] = self._calcular_score(p)
+            p["comissao_app_pct"] = round(float(p.get("appNewRate") or 0) * 100, 2)
+            p["comissao_web_pct"] = round(float(p.get("webNewRate") or 0) * 100, 2)
+
+        # DIAGNOSTICO: o campo 'sales' veio preenchido? (API pode devolver null)
+        sem_vendas = sum(1 for p in produtos if not p.get("sales"))
+        if produtos and sem_vendas == len(produtos):
+            logger.warning("[SHOPEE] NENHUM produto tem 'sales' preenchido — "
+                           "ranking por vendas ficara vazio. Confira a resposta da API.")
+
+        # Remove ofertas com campanha vencida (nao divulgar o que nao paga)
+        if filtrar_campanha_vencida:
+            antes = len(produtos)
+            produtos = [p for p in produtos if p["campanha_ativa"]]
+            removidos = antes - len(produtos)
+            if removidos:
+                logger.info("[SHOPEE] %d oferta(s) com campanha vencida removidas", removidos)
+
+        # Ordenacao: por vendas (padrao) ou por score (divulgacao)
+        if ordenar_por == "score":
+            produtos.sort(key=lambda p: p.get("score") or 0, reverse=True)
+        else:
+            produtos.sort(key=lambda p: p.get("sales") or 0, reverse=True)
 
         # Diagnostico: categorias presentes no resultado (um unico ponto)
         contagem_cats = Counter(
@@ -234,18 +330,15 @@ class ShopeeService:
         logger.info("[CATS] nicho=%r sanitizado=%r total=%d cats=%s",
                     nicho, keyword, len(produtos),
                     dict(contagem_cats.most_common(10)))
-
         return produtos[:total_desejado]
 
     # ---------- Compatibilidade (view antiga) ----------
-
     def buscar_produtos(self, nicho="", limite=LIMITE_PADRAO, page=1):
         produtos = self._buscar_pagina(page=page, limite=limite,
                                        keyword=self._sanitizar_keyword(nicho))
         return {"data": {"productOfferV2": {"nodes": produtos}}}
 
     # ---------- Link curto de afiliado ----------
-
     def gerar_link_afiliado(self, link_original):
         query = """mutation GenerateShortLink($input: ShortLinkInput!) {
   generateShortLink(input: $input) {
@@ -262,11 +355,11 @@ class ShopeeService:
         return {"data": {"generateShortLink": {"shortLink": link_original}}}
 
     # ---------- Salvamento no banco (historico) ----------
-
     def salvar_produtos(self, nodes, nicho):
         """
         CONVENCAO: a API devolve commissionRate como FRACAO (0.26 = 26%).
         O banco/dashboard trabalha com PERCENTUAL (26.0).
+        Grava a primeira productCatIds no campo categoria (models.py v2).
         """
         from .models import ProdutoValidado
 
@@ -276,11 +369,14 @@ class ShopeeService:
             preco = Decimal(str(node.get("price") or 0))
             taxa = Decimal(str(node.get("commissionRate") or 0))
             percentual = (taxa * 100).quantize(Decimal("0.01"))
+            cat_ids = node.get("productCatIds") or []
+            primeira_categoria = str(cat_ids[0]) if cat_ids else ""
             _, was_created = ProdutoValidado.objects.update_or_create(
                 item_id=str(node.get("itemId")),
                 defaults={
                     "nome": node.get("productName") or "Produto sem nome",
                     "nicho": nicho,
+                    "categoria": primeira_categoria[:100],
                     "imagem_url": node.get("imageUrl") or "",
                     "link_original": node.get("productLink") or "",
                     "link_afiliado": node.get("offerLink") or "",

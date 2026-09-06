@@ -3,6 +3,7 @@ import os
 import re
 import time
 import urllib.parse
+from collections import Counter
 import requests
 from django.conf import settings
 from django.http import JsonResponse
@@ -12,7 +13,6 @@ from django.views.decorators.http import require_POST
 from dotenv import load_dotenv
 from .models import PostRegistro, ProdutoValidado
 from .shopee_api import ShopeeService
-
 # ============================================================
 # LIMITES DE CARACTERES DA LEGENDA POR PLATAFORMA
 # Shopee Vídeo: 150 (inclui hashtags) | Reels/TikTok: 2200 | Feed FB/IG: 2200
@@ -22,7 +22,6 @@ LIMITES_CARACTERES_LEGENDA = {
     'reels': 2200,
     'feed': 2200,
 }
-
 # ============================================================
 # CARREGA O ARQUIVO .env (raiz do projeto) — SEM ISSO A CHAVE
 # DO GEMINI CHEGA VAZIA E O CODIGO CAI NO "PLANO B" GENERICO!
@@ -31,11 +30,19 @@ load_dotenv()
 GEMINI_API_KEY = getattr(settings, "GEMINI_API_KEY", None) or os.getenv("GEMINI_API_KEY", "")
 LINK_SUA_VITRINE_SHOPEE = "https://collshp.com/acheieindico_br669?view=storefront"
 LINK_GERENCIADOR_VITRINE = "https://shopee.com.br/m/affiliate-mycollection"
-
-
+# ============================================================
+# MODELOS GEMINI USADOS NAS CHAMADAS (com fallback entre eles)
+# ATENÇÃO: confirme que "gemini-3.6-flash" e "gemini-3.5-flash-lite"
+# são nomes válidos na sua chave. Se a API responder 400/404 com
+# "model not found", troque pelos nomes atuais da sua conta.
+# ============================================================
+MODELOS_GEMINI = ["gemini-3.6-flash", "gemini-3.5-flash-lite"]
+# ============================================================
+# CACHE DE NOMES DE CATEGORIAS
+# ============================================================
+ARQUIVO_CACHE_CATEGORIAS = os.path.join(os.path.dirname(__file__), 'categorias_cache.json')
 # ============================================================
 # GRUPOS PADRÃO — usados se o Gemini não retornar grupos.
-# Garante que a lista de grupos NUNCA fique vazia.
 # ============================================================
 GRUPOS_PADRAO = [
     {"nome": "Achadinhos e Promoções", "plataforma": "Facebook", "link_grupo": "https://www.facebook.com/groups/search/groups/?q=achadinhos+promocoes"},
@@ -44,17 +51,39 @@ GRUPOS_PADRAO = [
     {"nome": "Promoções Imperdíveis", "plataforma": "Facebook", "link_grupo": "https://www.facebook.com/groups/search/groups/?q=promocoes+imperdiveis"},
     {"nome": "Grupo de Descontos", "plataforma": "Facebook", "link_grupo": "https://www.facebook.com/groups/search/groups/?q=grupo+descontos+ofertas"},
 ]
-
 # ============================================================
 # MODA ÍNTIMA — palavras que disparam o MODO SEGURO de vídeo
 # ============================================================
 PALAVRAS_MODA_INTIMA = [
-     'calcinha', 'fio dental', 'lingerie', 'modeladora', 'sutiã', 'sutia',
+    'calcinha', 'fio dental', 'lingerie', 'modeladora', 'sutiã', 'sutia',
     'cinta', 'baby doll', 'babydoll', 'camisola', 'cueca', 'body',
     'corselet', 'conjunto intimo', 'conjunto íntimo', 'meia calça',
     'meia-calça', 'calcinhas',
 ]
-
+# ============================================================
+# FALLBACK ÚNICO DE PROMPT DE VÍDEO
+# ============================================================
+PROMPT_VIDEO_FALLBACK = (
+    "Vídeo de vitrine do produto EXATAMENTE como na imagem de referência: "
+    "mesmo corte, mesmas cores, mesmo tecido, mesma quantidade de peças. "
+    "PRIMEIRO, crie um STORYBOARD (imagem com os quadros da cena) mostrando o "
+    "produto idêntico à imagem de referência, para o usuário conferir e aprovar; "
+    "SÓ DEPOIS gere o vídeo final. "
+    "MOSTRE APENAS UM ÚNICO ITEM — PROIBIDO duplicar o produto, espelhar, "
+    "criar kits falsos ou adicionar outros produtos na cena. "
+    "Não redesenhe, não altere nem troque as cores do produto. "
+    "Movimento de câmera criativo permitido: zoom lento, pan lateral, "
+    "rotação suave, iluminação suave, fundo limpo. "
+    "Todo texto na tela deve estar em PORTUGUÊS DO BRASIL (ex.: 'Aproveite', 'Oferta'). "
+    "Estrutura em etapas: abertura, desenvolvimento, detalhes, fechamento. "
+    "Sem tempos de cena. Adapte a duração ao limite da ferramenta."
+)
+PROMPT_VIDEO_FALLBACK_MODA_INTIMA = PROMPT_VIDEO_FALLBACK + (
+    " REGRAS DE SEGURANÇA (obrigatórias em qualquer rede): sem nudez, sem poses "
+    "sugestivas, sem conotação sexual, sem modelos em roupa íntima ou posições íntimas. "
+    "Mostre o produto como no anúncio: dobrado, no cabide, em manequim ou, no máximo, "
+    "em modelo totalmente vestido."
+)
 def eh_moda_intima(nome_produto):
     """Retorna True se o nome do produto indicar moda íntima."""
     nome = (nome_produto or '').lower()
@@ -62,11 +91,9 @@ def eh_moda_intima(nome_produto):
         if re.search(r'\b' + re.escape(palavra) + r'\b', nome, re.IGNORECASE):
             return True
     return False
-
 def detectar_nicho_automatico(nome_produto, nicho_busca=""):
     if nicho_busca and nicho_busca.strip():
         return nicho_busca.strip().title()
-
     nome = nome_produto.lower()
     mapa_nichos = {
         'Limpeza & Lavanderia': ['percarbonato', 'tira mancha', 'limpa a seco', 'lavanderia', 'detergente', 'esfregão', 'vassoura', 'pano', 'spray', 'zip clean', 'seladora', 'vácuo'],
@@ -78,63 +105,96 @@ def detectar_nicho_automatico(nome_produto, nicho_busca=""):
         'Fitness & Saúde': ['bicicleta', 'ergométrica', 'spinning', 'academia', 'suplemento', 'whey', 'squeeze', 'algodão'],
         'Ferramentas & Utilidades': ['furadeira', 'parafusadeira', 'chave', 'broca', 'seladora', 'vedação'],
     }
-
     for nicho, palavras in mapa_nichos.items():
         for palavra in palavras:
             if re.search(r'\b' + re.escape(palavra) + r'\b', nome, re.IGNORECASE):
                 return nicho
-
     palavras_titulo = [p for p in nome.split() if len(p) > 3]
     if palavras_titulo:
         return palavras_titulo[0].title()
-
     return "Ofertas & Variedades"
-
+def _chamar_gemini(prompt_sistema, temperatura=0.5, max_tokens=2048):
+    """Chama o Gemini com fallback de modelos e retry em 429/503."""
+    if not GEMINI_API_KEY:
+        return ""
+    for modelo in MODELOS_GEMINI:
+        url_api = f"https://generativelanguage.googleapis.com/v1beta/models/{modelo}:generateContent?key={GEMINI_API_KEY}"
+        payload = {
+            "contents": [{"parts": [{"text": prompt_sistema}]}],
+            "generationConfig": {"temperature": temperatura, "maxOutputTokens": max_tokens},
+        }
+        for _ in range(2):
+            try:
+                response = requests.post(url_api, json=payload, timeout=25)
+                res_json = response.json()
+                if "candidates" in res_json and res_json["candidates"]:
+                    return res_json["candidates"][0]["content"]["parts"][0]["text"].strip()
+                if "error" in res_json:
+                    codigo_erro = res_json["error"].get("code")
+                    print(f"[AVISO GEMINI - {modelo}]: Erro {codigo_erro}")
+                    if codigo_erro in (429, 503):
+                        time.sleep(1)
+                        continue
+                    break
+            except Exception as req_err:
+                print(f"[ERRO REQUISIÇÃO GEMINI]: {req_err}")
+                time.sleep(1)
+    return ""
+def _converter_vendas(valor):
+    """Converte vendas em qualquer formato para int (defensivo).
+    Aceita: 27998, '27998', '34 mil', '27,1mil', '1.2k', '1.200', '1.234,56'."""
+    if valor is None:
+        return 0
+    if isinstance(valor, (int, float)):
+        return int(valor)
+    texto = str(valor).strip().lower().replace(' ', '')
+    multiplicador = 1
+    if texto.endswith('mil'):
+        multiplicador = 1000
+        texto = texto[:-3]
+    elif texto.endswith('k'):
+        multiplicador = 1000
+        texto = texto[:-1]
+    elif texto.endswith('m'):
+        multiplicador = 1000000
+        texto = texto[:-1]
+    if ',' in texto and '.' in texto:
+        texto = texto.replace('.', '').replace(',', '.')
+        try:
+            return int(float(texto) * multiplicador)
+        except (ValueError, TypeError):
+            return 0
+    if multiplicador == 1 and ',' not in texto and texto.count('.') >= 1:
+        partes = texto.split('.')
+        if all(p.isdigit() for p in partes):
+            return int(''.join(partes))
+    try:
+        return int(float(texto.replace(',', '.')) * multiplicador)
+    except (ValueError, TypeError):
+        return 0
+def _remover_hashtags_duplicadas(copy, hashtags):
+    """Se a copy já termina com hashtags (o Gemini coloca dentro da COPY),
+    remove-as para não duplicar com as nossas."""
+    if not hashtags:
+        return copy, hashtags
+    linhas = copy.splitlines()
+    hashtags_encontradas = []
+    while linhas and linhas[-1].strip().startswith('#'):
+        hashtags_encontradas.insert(0, linhas.pop().strip())
+    if hashtags_encontradas:
+        copy = '\n'.join(linhas).strip()
+        existentes = set(h.lower() for h in hashtags_encontradas)
+        hashtags = [h for h in hashtags if h.lower() not in existentes] + hashtags_encontradas
+    return copy, hashtags
 def gerar_conteudo_com_gemini(nome_produto, nicho_busca=""):
     nicho_padrao = detectar_nicho_automatico(nome_produto, nicho_busca)
     produto_intimo = eh_moda_intima(nome_produto)
     if not GEMINI_API_KEY:
-        if produto_intimo:
-            prompt_video_fallback = (
-                "Vídeo de vitrine do produto EXATAMENTE como na imagem de referência: "
-                "mesmo corte, mesmas cores, mesmo tecido, mesma quantidade de peças. "
-                "PRIMEIRO, crie um STORYBOARD (imagem com os quadros da cena) mostrando o "
-                "produto idêntico à imagem de referência, para o usuário conferir e aprovar; "
-                "SÓ DEPOIS gere o vídeo final. "
-                "MOSTRE APENAS UM ÚNICO ITEM — PROIBIDO duplicar o produto, espelhar, "
-                "criar kits falsos ou adicionar outros produtos na cena. "
-                "Não redesenhe, não altere nem troque as cores do produto. "
-                "Movimento de câmera criativo permitido: zoom lento, pan lateral, "
-                "rotação suave, iluminação suave, fundo limpo. "
-                "REGRAS DE SEGURANÇA (obrigatórias em qualquer rede): sem nudez, sem poses "
-                "sugestivas, sem conotação sexual, sem modelos em roupa íntima ou posições íntimas. "
-                "Mostre o produto como no anúncio: dobrado, no cabide, em manequim ou, no máximo, "
-                "em modelo totalmente vestido. "
-                "Todo texto na tela deve estar em PORTUGUÊS DO BRASIL (ex.: 'Aproveite', 'Oferta'). "
-                "Estrutura em etapas: abertura, desenvolvimento, detalhes, fechamento. "
-                "Sem tempos de cena. Adapte a duração ao limite da ferramenta."
-            )
-        else:
-            prompt_video_fallback = (
-                "Vídeo de vitrine do produto EXATAMENTE como na imagem de referência: "
-                "mesmo corte, mesmas cores, mesmo tecido, mesma quantidade de peças. "
-                "PRIMEIRO, crie um STORYBOARD (imagem com os quadros da cena) mostrando o "
-                "produto idêntico à imagem de referência, para o usuário conferir e aprovar; "
-                "SÓ DEPOIS gere o vídeo final. "
-                "MOSTRE APENAS UM ÚNICO ITEM — PROIBIDO duplicar o produto, espelhar, "
-                "criar kits falsos ou adicionar outros produtos na cena. "
-                "Não redesenhe, não altere nem troque as cores do produto. "
-                "Movimento de câmera criativo permitido: zoom lento, pan lateral, "
-                "rotação suave, iluminação suave, fundo limpo. "
-                "Todo texto na tela deve estar em PORTUGUÊS DO BRASIL (ex.: 'Aproveite', 'Oferta'). "
-                "Estrutura em etapas: abertura, desenvolvimento, detalhes, fechamento. "
-                "Sem tempos de cena. Adapte a duração ao limite da ferramenta."
-            )
         return {
             "nicho": nicho_padrao,
             "copy_vendas": f"🛍️ {nome_produto} — aproveite essa oferta enquanto está disponível! Confira os detalhes e garanta o seu pelo link. 🔗",
-            "prompt_video": prompt_video_fallback,
-            "grupos_sugeridos": [],
+            "prompt_video": PROMPT_VIDEO_FALLBACK_MODA_INTIMA if produto_intimo else PROMPT_VIDEO_FALLBACK,
+            "grupos_sugeridos": GRUPOS_PADRAO,
             "hashtags": ["#achadinhoshopee", "#promocaoshopee", "#oferta", "#comprasbaratas", "#achadinho", "#shopee"],
             "palavras_chave": [nicho_padrao, "promoção", "oferta", "barato", "comprar"],
         }
@@ -219,33 +279,7 @@ PROMPT_VIDEO: <roteiro de cenas>
 GRUPOS: <termo 1>, <termo 2>, <termo 3>, <termo 4>, <termo 5>
 """
     try:
-        modelos_disponiveis = [
-            "gemini-3.6-flash",
-            "gemini-3.5-flash-lite"
-        ]
-        texto_resposta = ""
-        for modelo in modelos_disponiveis:
-            url_api = f"https://generativelanguage.googleapis.com/v1beta/models/{modelo}:generateContent?key={GEMINI_API_KEY}"
-            payload = {"contents": [{"parts": [{"text": prompt_sistema}]}]}
-            for tentativa in range(2):
-                try:
-                    response = requests.post(url_api, json=payload, timeout=25)
-                    res_json = response.json()
-                    if "candidates" in res_json and len(res_json["candidates"]) > 0:
-                        texto_resposta = res_json["candidates"][0]["content"]["parts"][0]["text"]
-                        break
-                    elif "error" in res_json:
-                        codigo_erro = res_json["error"].get("code")
-                        print(f"[AVISO GEMINI - {modelo}]: Erro {codigo_erro}")
-                        if codigo_erro in (429, 503):
-                            time.sleep(1)
-                            continue
-                        break
-                except Exception as req_err:
-                    print(f"[ERRO REQUISIÇÃO GEMINI]: {req_err}")
-                    time.sleep(1)
-            if texto_resposta:
-                break
+        texto_resposta = _chamar_gemini(prompt_sistema)
         nicho = nicho_padrao
         copy = ""
         prompt_video = ""
@@ -269,46 +303,7 @@ GRUPOS: <termo 1>, <termo 2>, <termo 3>, <termo 4>, <termo 5>
         if not copy:
             copy = f"🛍️ {nome_produto} — aproveite essa oferta enquanto está disponível! Confira os detalhes e garanta o seu pelo link. 🔗"
         if not prompt_video:
-            if produto_intimo:
-                prompt_video = (
-                    "Vídeo de vitrine do produto EXATAMENTE como na imagem de referência: "
-                    "mesmo corte, mesmas cores, mesmo tecido, mesma quantidade de peças. "
-                    "PRIMEIRO, crie um STORYBOARD (imagem com os quadros da cena) mostrando o "
-                    "produto idêntico à imagem de referência, para o usuário conferir e aprovar; "
-                    "SÓ DEPOIS gere o vídeo final. "
-                    "MOSTRE APENAS UM ÚNICO ITEM — PROIBIDO duplicar o produto, espelhar, "
-                    "criar kits falsos ou adicionar outros produtos na cena. "
-                    "Não redesenhe, não altere nem troque as cores do produto. "
-                    "Movimento de câmera criativo permitido: zoom lento, pan lateral, "
-                    "rotação suave, iluminação suave, fundo limpo. "
-                    "REGRAS DE SEGURANÇA (obrigatórias em qualquer rede): sem nudez, sem poses "
-                    "sugestivas, sem conotação sexual, sem modelos em roupa íntima ou posições íntimas. "
-                    "Mostre o produto como no anúncio: dobrado, no cabide, em manequim ou, no máximo, "
-                    "em modelo totalmente vestido. "
-                    "Todo texto na tela deve estar em PORTUGUÊS DO BRASIL (ex.: 'Aproveite', 'Oferta'). "
-                    "Estrutura em etapas: abertura, desenvolvimento, detalhes, fechamento. "
-                    "Sem tempos de cena. Adapte a duração ao limite da ferramenta."
-                )
-            else:
-                prompt_video = (
-                    "Vídeo de vitrine do produto EXATAMENTE como na imagem de referência: "
-                    "mesmo corte, mesmas cores, mesmo tecido, mesma quantidade de peças. "
-                    "PRIMEIRO, crie um STORYBOARD (imagem com os quadros da cena) mostrando o "
-                    "produto idêntico à imagem de referência, para o usuário conferir e aprovar; "
-                    "SÓ DEPOIS gere o vídeo final. "
-                    "MOSTRE APENAS UM ÚNICO ITEM — PROIBIDO duplicar o produto, espelhar, "
-                    "criar kits falsos ou adicionar outros produtos na cena. "
-                    "Não redesenhe, não altere nem troque as cores do produto. "
-                    "Movimento de câmera criativo permitido: zoom lento, pan lateral, "
-                    "rotação suave, iluminação suave, fundo limpo. "
-                    "Todo texto na tela deve estar em PORTUGUÊS DO BRASIL (ex.: 'Aproveite', 'Oferta'). "
-                    "Estrutura em etapas: abertura, desenvolvimento, detalhes, fechamento. "
-                    "Sem tempos de cena. Adapte a duração ao limite da ferramenta."
-                )
-        # ============================================================
-        # GRUPOS — SOMENTE FACEBOOK (sem Telegram). Cada termo vira
-        # uma busca no Facebook Groups, para você divulgar o post.
-        # ============================================================
+            prompt_video = PROMPT_VIDEO_FALLBACK_MODA_INTIMA if produto_intimo else PROMPT_VIDEO_FALLBACK
         grupos_sugeridos = []
         if grupos_texto:
             nomes_grupos = [g.strip() for g in grupos_texto.split(",") if g.strip()]
@@ -318,9 +313,6 @@ GRUPOS: <termo 1>, <termo 2>, <termo 3>, <termo 4>, <termo 5>
                 grupos_sugeridos.append({"nome": item, "plataforma": "Facebook", "link_grupo": link_url})
         if not grupos_sugeridos:
             grupos_sugeridos = GRUPOS_PADRAO
-        # ============================================================
-        # HASHTAGS E PALAVRAS-CHAVE — SEO do post no Shopee Vídeo
-        # ============================================================
         hashtags = [h.strip() for h in hashtags_texto.split(",") if h.strip()]
         if not hashtags:
             hashtags = ["#achadinhoshopee", "#promocaoshopee", "#oferta", "#comprasbaratas", "#achadinho", "#shopee"]
@@ -337,87 +329,51 @@ GRUPOS: <termo 1>, <termo 2>, <termo 3>, <termo 4>, <termo 5>
         }
     except Exception as e:
         print(f"Erro ao processar resposta do Gemini: {e}")
-        if produto_intimo:
-            prompt_video_fallback = (
-                "Vídeo de vitrine do produto EXATAMENTE como na imagem de referência: "
-                "mesmo corte, mesmas cores, mesmo tecido, mesma quantidade de peças. "
-                "PRIMEIRO, crie um STORYBOARD (imagem com os quadros da cena) mostrando o "
-                "produto idêntico à imagem de referência, para o usuário conferir e aprovar; "
-                "SÓ DEPOIS gere o vídeo final. "
-                "MOSTRE APENAS UM ÚNICO ITEM — PROIBIDO duplicar o produto, espelhar, "
-                "criar kits falsos ou adicionar outros produtos na cena. "
-                "Não redesenhe, não altere nem troque as cores do produto. "
-                "Movimento de câmera criativo permitido: zoom lento, pan lateral, "
-                "rotação suave, iluminação suave, fundo limpo. "
-                "REGRAS DE SEGURANÇA (obrigatórias em qualquer rede): sem nudez, sem poses "
-                "sugestivas, sem conotação sexual, sem modelos em roupa íntima ou posições íntimas. "
-                "Mostre o produto como no anúncio: dobrado, no cabide, em manequim ou, no máximo, "
-                "em modelo totalmente vestido. "
-                "Todo texto na tela deve estar em PORTUGUÊS DO BRASIL (ex.: 'Aproveite', 'Oferta'). "
-                "Estrutura em etapas: abertura, desenvolvimento, detalhes, fechamento. "
-                "Sem tempos de cena. Adapte a duração ao limite da ferramenta."
-            )
-        else:
-            prompt_video_fallback = (
-                "Vídeo de vitrine do produto EXATAMENTE como na imagem de referência: "
-                "mesmo corte, mesmas cores, mesmo tecido, mesma quantidade de peças. "
-                "PRIMEIRO, crie um STORYBOARD (imagem com os quadros da cena) mostrando o "
-                "produto idêntico à imagem de referência, para o usuário conferir e aprovar; "
-                "SÓ DEPOIS gere o vídeo final. "
-                "MOSTRE APENAS UM ÚNICO ITEM — PROIBIDO duplicar o produto, espelhar, "
-                "criar kits falsos ou adicionar outros produtos na cena. "
-                "Não redesenhe, não altere nem troque as cores do produto. "
-                "Movimento de câmera criativo permitido: zoom lento, pan lateral, "
-                "rotação suave, iluminação suave, fundo limpo. "
-                "Todo texto na tela deve estar em PORTUGUÊS DO BRASIL (ex.: 'Aproveite', 'Oferta'). "
-                "Estrutura em etapas: abertura, desenvolvimento, detalhes, fechamento. "
-                "Sem tempos de cena. Adapte a duração ao limite da ferramenta."
-            )
         return {
             "nicho": nicho_padrao,
             "copy_vendas": f"🛍️ {nome_produto} — aproveite essa oferta enquanto está disponível! Confira os detalhes e garanta o seu pelo link. 🔗",
-            "prompt_video": prompt_video_fallback,
-            "grupos_sugeridos": [],
+            "prompt_video": PROMPT_VIDEO_FALLBACK_MODA_INTIMA if produto_intimo else PROMPT_VIDEO_FALLBACK,
+            "grupos_sugeridos": GRUPOS_PADRAO,
             "hashtags": ["#achadinhoshopee", "#promocaoshopee", "#oferta", "#comprasbaratas", "#achadinho", "#shopee"],
             "palavras_chave": [nicho_padrao, "promoção", "oferta", "barato", "comprar"],
         }
 def _salvar_cache_categorias(cache):
-    """Grava o cache de nomes no arquivo JSON (para não perguntar 2x ao Gemini)."""
+    """Grava o cache de nomes no arquivo JSON."""
     try:
         with open(ARQUIVO_CACHE_CATEGORIAS, 'w', encoding='utf-8') as f:
             json.dump(cache, f, ensure_ascii=False, indent=2)
     except Exception as e:
         print(f"[CAT CACHE] erro ao salvar: {e}")
-
+def _carregar_cache_categorias():
+    """Carrega o cache de nomes de categorias do arquivo JSON."""
+    try:
+        if os.path.exists(ARQUIVO_CACHE_CATEGORIAS):
+            with open(ARQUIVO_CACHE_CATEGORIAS, 'r', encoding='utf-8') as f:
+                cache = json.load(f)
+                if isinstance(cache, dict):
+                    return cache
+    except Exception as e:
+        print(f"[CAT CACHE] erro ao carregar: {e}")
+    return {}
 def _parsear_resposta_categorias(texto):
-    """Converte a resposta do Gemini em dicionário {catid: nome}.
-    Aceita formatos variados: 'CATID 100716: Nome', '100716 - Nome',
-    '100716: Nome', '2. 100716 — Nome' etc."""
-    import re
+    """Converte a resposta do Gemini em dicionário {catid: nome}."""
     resultado = {}
     for linha in texto.splitlines():
         linha = linha.strip()
         if not linha:
             continue
-        # Procura um número de 5 a 7 dígitos (o catid) em qualquer lugar da linha
         m = re.search(r'(\d{5,7})', linha)
         if not m:
             continue
         cat_id = m.group(1)
-        # Pega o texto DEPOIS do número, removendo separadores e aspas
         resto = linha[m.end():].lstrip(':-—–').strip().strip('"\'')
         if resto and resto.lower() not in ('sem nome', 'n/a', 'desconhecido', 'nenhum'):
             resultado[cat_id] = resto
     return resultado
-
 def sugerir_nomes_categorias(pendentes):
-    """Pergunta ao Gemini o nome das categorias em LOTES PEQUENOS (5 por vez).
-    Lotes menores = o Gemini segue o formato com muito mais precisão.
-    pendentes = lista de tuplas (cat_id_str, [titulos_exemplo]).
-    Devolve {cat_id_str: nome} para as que conseguiu nomear."""
+    """Pergunta ao Gemini o nome das categorias em LOTES PEQUENOS (5 por vez)."""
     if not GEMINI_API_KEY or not pendentes:
         return {}
-
     resultados = {}
     TAMANHO_LOTE = 5
     for inicio in range(0, len(pendentes), TAMANHO_LOTE):
@@ -426,7 +382,6 @@ def sugerir_nomes_categorias(pendentes):
         for i, (cat_id, exemplos) in enumerate(lote, start=1):
             ex = ', '.join(exemplos[:2]) if exemplos else '(sem exemplos)'
             linhas.append(f"{i}. CATID {cat_id} — produtos: {ex}")
-
         prompt = (
             "Você é um especialista em categorias de e-commerce da Shopee Brasil.\n"
             "Para cada categoria numerada abaixo, identifique o nome curto da "
@@ -438,51 +393,23 @@ def sugerir_nomes_categorias(pendentes):
             "Não escreva explicações, listas ou texto extra. Apenas as linhas CATID.\n\n"
             + "\n".join(linhas)
         )
-
-        modelos = ["gemini-3.6-flash", "gemini-3.5-flash-lite"]
-        for modelo in modelos:
-            try:
-                url = (
-                    "https://generativelanguage.googleapis.com/v1beta/models/"
-                    f"{modelo}:generateContent?key={GEMINI_API_KEY}"
-                )
-                payload = {
-                    "contents": [{"parts": [{"text": prompt}]}],
-                    "generationConfig": {"temperature": 0.2, "maxOutputTokens": 300},
-                }
-                resp = requests.post(url, json=payload, timeout=25)
-                if resp.status_code != 200:
-                    print(f"[CAT GEMINI] {modelo} status {resp.status_code}")
-                    continue
-                data = resp.json()
-                texto = data["candidates"][0]["content"]["parts"][0]["text"]
-                lote_resultado = _parsear_resposta_categorias(texto)
-                resultados.update(lote_resultado)
-                print(f"[CAT GEMINI] lote {inicio // TAMANHO_LOTE + 1}: {len(lote_resultado)} nomes")
-                break
-            except Exception as e:
-                print(f"[CAT GEMINI] {modelo} falhou: {e}")
-                continue
+        texto = _chamar_gemini(prompt, temperatura=0.2, max_tokens=300)
+        if texto:
+            lote_resultado = _parsear_resposta_categorias(texto)
+            resultados.update(lote_resultado)
+            print(f"[CAT GEMINI] lote {inicio // TAMANHO_LOTE + 1}: {len(lote_resultado)} nomes")
     return resultados
 # ============================================================
 # PAGINAÇÃO — monta a lista de páginas com "..." nos intervalos
 # ============================================================
 def calcular_paginas(pagina_atual, total_paginas, margem=2):
-    """
-    Monta a lista de páginas para a paginação, com '...' nos intervalos.
-    Sempre inclui a primeira e a última página.
-    Ex.: total=20, atual=4 -> [1, '...', 3, 4, 5, 6, 7, '...', 20]
-    """
     if total_paginas <= 1:
         return [1]
-
     paginas = {1, total_paginas}
     for i in range(pagina_atual - margem, pagina_atual + margem + 1):
         if 1 <= i <= total_paginas:
             paginas.add(i)
-
     paginas = sorted(paginas)
-
     resultado = []
     anterior = None
     for p in paginas:
@@ -491,41 +418,35 @@ def calcular_paginas(pagina_atual, total_paginas, margem=2):
         resultado.append(p)
         anterior = p
     return resultado
-
 def pagina_mineracao(request):
     nicho_input = request.GET.get('q', request.GET.get('nicho', '')).strip()
     nicho_busca_api = nicho_input
-
     ITENS_POR_PAGINA = 20
-
-    # MELHORIA 4 — quantidade de produtos ajustável (salva na sessão; padrão 100; máx 250)
     try:
         TOTAL_DESEJADO = int(request.GET.get('total') or request.session.get('total_desejado', 100))
     except (ValueError, TypeError):
         TOTAL_DESEJADO = 100
-    TOTAL_DESEJADO = max(100, min(250, TOTAL_DESEJADO))
+    TOTAL_DESEJADO = max(20, min(250, TOTAL_DESEJADO))
     request.session['total_desejado'] = TOTAL_DESEJADO
-
     try:
         pagina = max(1, int(request.GET.get('page', 1)))
     except ValueError:
         pagina = 1
-
-    shopee = ShopeeService()
-
+    erro_busca = None
+    # ShopeeService() DENTRO do try — se as credenciais faltarem,
+    # mostra o aviso amigável em vez de erro 500.
     try:
+        shopee = ShopeeService()
         raw_produtos = shopee.buscar_mais_vendidos(
             nicho=nicho_busca_api,
             total_desejado=TOTAL_DESEJADO,
-            
         )
     except Exception as e:
         print(f"[ERRO AO BUSCAR PRODUTOS]: {e}")
         raw_produtos = []
-
+        erro_busca = "A Shopee não respondeu agora. Tente novamente em instantes."
     if not raw_produtos:
         raw_produtos = []
-
     produtos_formatados = []
     for prod in raw_produtos:
         item_id = str(prod.get('itemId', ''))
@@ -533,40 +454,37 @@ def pagina_mineracao(request):
         imagem = prod.get('imageUrl') or prod.get('image') or ''
         link_orig = prod.get('offerLink') or prod.get('productLink') or ''
         categorias = prod.get('productCatIds') or []
-
         val_preco = prod.get('price') or prod.get('price_direct') or 0.0
         try:
             val_preco = float(val_preco)
         except (ValueError, TypeError):
             val_preco = 0.0
-
+        # taxa_num inicializada ANTES do try — nunca fica indefinida
+        taxa_num = 8.0  # padrao defensivo: 8% se a API nao devolver
         try:
             taxa_num = float(prod.get('commissionRate') or 0.08)
             if 0 < taxa_num < 1:
                 taxa_num = taxa_num * 100
-            comissao_str = f"{taxa_num:.2f}".replace('.', ',')
         except (ValueError, TypeError):
-            comissao_str = "8,00"
-
-        try:
-            vendas_int = int(prod.get('sales') or 0)
-        except (ValueError, TypeError):
-            vendas_int = 0
-
-        comissao_estimada = round(val_preco * (float(comissao_str.replace(',', '.')) / 100), 2)
-
+            taxa_num = 8.0
+        comissao_str = f"{taxa_num:.2f}".replace('.', ',')
+        vendas_int = _converter_vendas(prod.get('sales'))
+        comissao_estimada = round(val_preco * (taxa_num / 100), 2)
+        # valores numéricos prontos (evita re-parse de string no filtro)
         produtos_formatados.append({
             'item_id': item_id,
             'titulo': titulo,
             'imagem': imagem,
             'preco': f"{val_preco:.2f}".replace('.', ','),
+            'preco_num': val_preco,
             'comissao': comissao_str,
+            'comissao_num': taxa_num,
             'comissao_estimada': f"{comissao_estimada:.2f}".replace('.', ','),
             'link_afiliado': link_orig,
             'categorias': categorias,
             'vendas': vendas_int,
+            'venda_num': vendas_int,
         })
-
     # Agrupa pelo NOME do produto (mesmo produto de vendedores diferentes)
     melhores_por_nome = {}
     for p in produtos_formatados:
@@ -574,20 +492,15 @@ def pagina_mineracao(request):
         if chave not in melhores_por_nome or p['vendas'] > melhores_por_nome[chave]['vendas']:
             melhores_por_nome[chave] = p
     produtos_formatados = list(melhores_por_nome.values())
-
     # Ordena do mais vendido para o menos vendido
     produtos_formatados.sort(
         key=lambda p: p['vendas'] if isinstance(p['vendas'], (int, float)) else 0,
         reverse=True
     )
-        # ===== MELHORIA 5v2 — selo "Em alta" (vendas cresceram entre varreduras) =====
-    # Sinal primário: comparar o contador de vendas com a ÚLTIMA varredura do MESMO
-    # nicho (sessão). Vendas subiram = produto está vendendo agora.
-    # Sinais de apoio: subiu de posição no ranking ou entrou agora na lista.
-    EM_ALTA_VENDAS_MIN = 10     # vendeu pelo menos 10 unidades a mais = em alta
-    EM_ALTA_SUBIDA_MIN = 3      # subiu pelo menos 3 posições = em alta
-    EM_ALTA_NOVO_TOP = 60       # entrou agora no ranking até esta posição = novo
-
+    # ===== MELHORIA 5v2 — selo "Em alta" =====
+    EM_ALTA_VENDAS_MIN = 10
+    EM_ALTA_SUBIDA_MIN = 3
+    EM_ALTA_NOVO_TOP = 60
     chave_nicho = (nicho_busca_api or 'geral').strip().lower() or 'geral'
     ranking_atual = {}
     for posicao, p in enumerate(produtos_formatados, start=1):
@@ -596,13 +509,9 @@ def pagina_mineracao(request):
                 'pos': posicao,
                 'vendas': p.get('vendas') or 0,
             }
-
     rankings_salvos = request.session.get('rankings_anteriores') or {}
     tem_referencia = chave_nicho in rankings_salvos
     ranking_anterior = rankings_salvos.get(chave_nicho) or {}
-
-    # Se a referência guardada estiver no formato ANTIGO (v1: só posição como número),
-    # descarta e recomeça — evita erro de formato entre versões.
     if tem_referencia and ranking_anterior:
         primeiro_valor = next(iter(ranking_anterior.values()), None)
         if not isinstance(primeiro_valor, dict):
@@ -610,13 +519,11 @@ def pagina_mineracao(request):
             ranking_anterior = {}
             rankings_salvos.pop(chave_nicho, None)
             request.session['rankings_anteriores'] = rankings_salvos
-
     try:
         eh_primeira_pagina = int(request.GET.get('page', 1)) <= 1
     except (ValueError, TypeError):
         eh_primeira_pagina = True
-
-    novos_da_varredura = set()   # coleta os "novos" desta varredura
+    novos_da_varredura = set()
     for p in produtos_formatados:
         p['em_alta'] = False
         p['tipo_alta'] = ''
@@ -628,11 +535,10 @@ def pagina_mineracao(request):
         ref = ranking_anterior.get(item_id)
         vendas_atuais = p.get('vendas') or 0
         if ref is None:
-            # Não estava na varredura anterior: "novo" só se entrou com força
             if ranking_atual[item_id]['pos'] <= EM_ALTA_NOVO_TOP:
                 p['em_alta'] = True
                 p['tipo_alta'] = 'novo'
-                novos_da_varredura.add(item_id)   # registra o item como novo
+                novos_da_varredura.add(item_id)
         else:
             delta_vendas = vendas_atuais - (ref.get('vendas') or 0)
             p['delta_vendas'] = delta_vendas
@@ -644,31 +550,22 @@ def pagina_mineracao(request):
                 if subida >= EM_ALTA_SUBIDA_MIN:
                     p['em_alta'] = True
                     p['tipo_alta'] = 'subida'
-
-        # Só atualiza a referência na 1ª página (paginar não pode "mover" o ranking)
     if eh_primeira_pagina:
         rankings_salvos[chave_nicho] = ranking_atual
         request.session['rankings_anteriores'] = rankings_salvos
-        # Guarda os "novos" desta varredura para manter o selo nas próximas páginas
         request.session['novos_da_varredura'] = {chave_nicho: sorted(novos_da_varredura)}
     else:
-        # Página 2+: reaplica o selo "novo" usando a lista salva na 1ª página
         novos_salvos = (request.session.get('novos_da_varredura') or {}).get(chave_nicho) or []
         novos_salvos = set(novos_salvos)
         for p in produtos_formatados:
             if p['item_id'] in novos_salvos:
                 p['em_alta'] = True
                 p['tipo_alta'] = 'novo'
-
-    # DIAGNÓSTICO EM ALTA v2 (remover depois)
     qt_vendas = sum(1 for p in produtos_formatados if p['tipo_alta'] == 'vendas')
-    qt_subiu = sum(1 for p in produtos_formatados if p['tipo_alta'] == 'subiu')
+    qt_subiu = sum(1 for p in produtos_formatados if p['tipo_alta'] == 'subida')
     qt_novo = sum(1 for p in produtos_formatados if p['tipo_alta'] == 'novo')
     print(f"[EM ALTA v2] nicho='{chave_nicho}' | ref={tem_referencia} | produtos={len(produtos_formatados)} | vendas={qt_vendas} | subiu={qt_subiu} | novo={qt_novo}")
-
     # ===== MELHORIA 6 — FILTROS DO RANKING =====
-    # Filtros opcionais via URL (?preco_max=100&comissao_min=5&venda_min=2).
-    # Aplicados DEPOIS do "Em alta": a referência continua sendo o ranking completo.
     def _parse_filtro(valor):
         try:
             if valor is None or str(valor).strip() == '':
@@ -676,40 +573,27 @@ def pagina_mineracao(request):
             return float(str(valor).replace(',', '.'))
         except (ValueError, TypeError):
             return None
-
     preco_max = _parse_filtro(request.GET.get('preco_max'))
     comissao_min = _parse_filtro(request.GET.get('comissao_min'))
     venda_min = _parse_filtro(request.GET.get('venda_min'))
-
-    # Trava em limites razoáveis (evita valores absurdos na URL)
     if preco_max is not None:
         preco_max = max(0.0, min(10000.0, preco_max))
     if comissao_min is not None:
         comissao_min = max(0.0, min(100.0, comissao_min))
     if venda_min is not None:
         venda_min = max(0.0, min(10000.0, venda_min))
-
     total_sem_filtro = len(produtos_formatados)
-
-    # Aplica os filtros comparando valores numéricos
+    # usa os campos numéricos já calculados (sem re-parse de string)
     produtos_filtrados = []
     for p in produtos_formatados:
-        preco_num = float(p['preco'].replace(',', '.'))
-        comissao_num = float(p['comissao'].replace(',', '.'))
-        venda_num = float(p['comissao_estimada'].replace(',', '.'))
-        p['preco_num'] = preco_num
-        p['comissao_num'] = comissao_num
-        p['venda_num'] = venda_num
-        if preco_max is not None and preco_num > preco_max:
+        if preco_max is not None and p['preco_num'] > preco_max:
             continue
-        if comissao_min is not None and comissao_num < comissao_min:
+        if comissao_min is not None and p['comissao_num'] < comissao_min:
             continue
-        if venda_min is not None and venda_num < venda_min:
+        if venda_min is not None and p['venda_num'] < venda_min:
             continue
         produtos_filtrados.append(p)
     produtos_formatados = produtos_filtrados
-
-    # String com os filtros ativos, para manter ao paginar (?page=2&q=...&preco_max=...)
     filtros_query = ''
     if preco_max is not None:
         filtros_query += f'&preco_max={preco_max:g}'
@@ -721,21 +605,15 @@ def pagina_mineracao(request):
     if nicho_input:
         query_extra += f'&q={nicho_input}'
     query_extra += filtros_query
-
-   # ===== MELHORIA 11 — dropdown de categorias (filtro sob demanda) =====
-    from collections import Counter
+    # ===== MELHORIA 11 — dropdown de categorias =====
     categoria_filtro = request.GET.get('categoria', '').strip()
-
-    # Conta as categorias presentes em TODOS os produtos buscados (para o dropdown)
     contagem_categorias = Counter()
     for p in produtos_formatados:
         for c in p.get('categorias', []):
             contagem_categorias[str(c)] += 1
-
-    # Traduz os catids para nomes bonitos (cache primeiro, Gemini quando faltar)
     cache_categorias = _carregar_cache_categorias()
     print(f"[CAT DEBUG] cache carregado: {len(cache_categorias)} nomes")
-    pendentes = []  # catids sem nome ainda (para perguntar ao Gemini em lote)
+    pendentes = []
     for cat_id, qtd in contagem_categorias.most_common(15):
         nome = cache_categorias.get(cat_id)
         if not nome and cat_id.isdigit():
@@ -746,19 +624,13 @@ def pagina_mineracao(request):
             ][:2]
             pendentes.append((cat_id, exemplos))
     print(f"[CAT DEBUG] pendentes sem nome: {len(pendentes)}")
-
-    # 1 chamada ao Gemini para nomear todas as categorias que faltam
     if pendentes:
         nomes_novos = sugerir_nomes_categorias(pendentes)
         print(f"[CAT DEBUG] Gemini devolveu: {nomes_novos}")
         if nomes_novos:
             cache_categorias.update(nomes_novos)
-
-    # SEMPRE salva: cria o arquivo mesmo que o Gemini não devolva nada
     _salvar_cache_categorias(cache_categorias)
     print(f"[CAT DEBUG] cache final: {len(cache_categorias)} nomes")
-
-    # Monta os rótulos finais do dropdown
     categorias_disponiveis = []
     for cat_id, qtd in contagem_categorias.most_common(15):
         nome = cache_categorias.get(cat_id)
@@ -767,36 +639,29 @@ def pagina_mineracao(request):
         else:
             rotulo = f"Categoria {cat_id} ({qtd})"
         categorias_disponiveis.append((cat_id, rotulo))
-
-    # Se o usuário escolheu uma categoria no dropdown, filtra a lista
     if categoria_filtro:
         produtos_formatados = [
             p for p in produtos_formatados
             if categoria_filtro in [str(c) for c in p.get('categorias', [])]
         ]
-
-    # Mantém o filtro de categoria ao paginar (?page=2&q=...&categoria=100716)
     if categoria_filtro:
         query_extra += f'&categoria={categoria_filtro}'
-
     total_itens = len(produtos_formatados)
     total_paginas = max(1, -(-total_itens // ITENS_POR_PAGINA))
     pagina = min(pagina, total_paginas)
     inicio = (pagina - 1) * ITENS_POR_PAGINA
     fim = inicio + ITENS_POR_PAGINA
     produtos_pagina = produtos_formatados[inicio:fim]
-
-    # MELHORIA 1 — posts de hoje (contador + itens já postados)
-    registros_hoje = posts_de_hoje()
-    quantidade_posts_hoje = registros_hoje.count()
-    posts_hoje_ids = set(registros_hoje.values_list('item_id', flat=True))
-        # MELHORIA 3 — meta diária ajustável (salva na sessão; padrão 5)
+    # MELHORIA 1 — posts de hoje
+    registros_hoje_ids = list(posts_de_hoje().values_list('item_id', flat=True))
+    quantidade_posts_hoje = len(registros_hoje_ids)
+    posts_hoje_ids = set(registros_hoje_ids)
+    # MELHORIA 3 — meta diária ajustável
     META_DIARIA = int(request.session.get('meta_diaria', 5))
     if META_DIARIA < 1:
         META_DIARIA = 1
     if META_DIARIA > 50:
         META_DIARIA = 50
-
     contexto = {
         'produtos': produtos_pagina,
         'query_atual': nicho_input,
@@ -806,7 +671,7 @@ def pagina_mineracao(request):
         'total_paginas': total_paginas,
         'total_itens': total_itens,
         'paginas': calcular_paginas(pagina, total_paginas),
-                'quantidade_posts_hoje': quantidade_posts_hoje,
+        'quantidade_posts_hoje': quantidade_posts_hoje,
         'posts_hoje_ids': posts_hoje_ids,
         'meta_diaria': META_DIARIA,
         'total_desejado': TOTAL_DESEJADO,
@@ -818,19 +683,34 @@ def pagina_mineracao(request):
         'total_sem_filtro': total_sem_filtro,
         'categorias_disponiveis': categorias_disponiveis,
         'categoria_filtro': categoria_filtro,
+        'erro_busca': erro_busca,
     }
-
     return render(request, 'core/dashboard.html', contexto)
-
 @require_POST
 def salvar_e_preparar_produto(request):
     try:
-        item_id = request.POST.get('item_id')
+        item_id = request.POST.get('item_id', '').strip()
+        if not item_id:
+            return JsonResponse({'status': 'erro', 'mensagem': 'item_id é obrigatório.'}, status=400)
         nome = request.POST.get('nome', '')
         link_original = request.POST.get('link_original', '')
         imagem_url = request.POST.get('imagem_url', '')
         nicho_busca = request.POST.get('nicho', '')
-
+        # ===== Campos numéricos vindos do card da dashboard =====
+        def _parse_float(valor, padrao=0.0):
+            try:
+                if valor is None or str(valor).strip() == '':
+                    return padrao
+                return float(str(valor).replace(',', '.'))
+            except (ValueError, TypeError):
+                return padrao
+        preco_num = _parse_float(request.POST.get('preco'))
+        comissao_num = _parse_float(request.POST.get('comissao'))
+        try:
+            vendas_num = int(float(str(request.POST.get('vendas') or 0).replace(',', '.')))
+        except (ValueError, TypeError):
+            vendas_num = 0
+        comissao_estimada_num = round(preco_num * (comissao_num / 100), 2)
         dados_ia = gerar_conteudo_com_gemini(nome, nicho_busca)
         nicho_preciso = dados_ia['nicho']
         copy_vendas = dados_ia['copy_vendas']
@@ -838,7 +718,6 @@ def salvar_e_preparar_produto(request):
         grupos_sugeridos = dados_ia['grupos_sugeridos']
         hashtags = dados_ia['hashtags']
         palavras_chave = dados_ia['palavras_chave']
-
         shopee = ShopeeService()
         link_afiliado = link_original
         if link_original:
@@ -850,7 +729,6 @@ def salvar_e_preparar_produto(request):
                     link_afiliado = short_data.get('shortLink') or link_original
             except Exception as api_err:
                 print(f"Aviso ao encurtar link: {api_err}")
-
         ProdutoValidado.objects.update_or_create(
             item_id=item_id,
             defaults={
@@ -860,9 +738,19 @@ def salvar_e_preparar_produto(request):
                 'link_original': link_original,
                 'link_afiliado': link_afiliado,
                 'prompt_video_ia': prompt_ia,
+                # ===== Campos numéricos — banco rico para relatórios =====
+                'preco': preco_num,
+                'comissao_percentual': comissao_num,
+                'vendas': vendas_num,
+                'comissao_estimada': comissao_estimada_num,
             }
         )
-
+        # guarda copy/hashtags na sessão para o modal NÃO chamar o Gemini de novo
+        request.session[f'ia_produto_{item_id}'] = {
+            'copy': copy_vendas,
+            'hashtags': hashtags,
+            'palavras_chave': palavras_chave,
+        }
         return JsonResponse({
             'status': 'sucesso',
             'item_id': item_id,
@@ -875,11 +763,9 @@ def salvar_e_preparar_produto(request):
             'hashtags': hashtags,
             'palavras_chave': palavras_chave,
         })
-
     except Exception as e:
         print(f"Erro no processamento do produto: {e}")
         return JsonResponse({'status': 'erro', 'mensagem': str(e)}, status=400)
-
 @require_POST
 def adicionar_a_vitrine(request):
     item_id = request.POST.get('item_id')
@@ -889,28 +775,27 @@ def adicionar_a_vitrine(request):
             item_id = body_data.get('item_id') or body_data.get('id')
         except Exception:
             pass
-
     try:
-        produto = ProdutoValidado.objects.get(item_id=item_id)
-        produto.em_vitrine = True
-        produto.save()
-        return JsonResponse({
-            'status': 'sucesso',
-            'mensagem': 'Produto salvo localmente na vitrine!',
-            'link_afiliado': produto.link_afiliado,
-            'url_gerenciador_shopee': LINK_GERENCIADOR_VITRINE
-        })
-    except ProdutoValidado.DoesNotExist:
+        produto = ProdutoValidado.objects.filter(item_id=item_id).first()
+        if produto:
+            produto.em_vitrine = True
+            produto.save()
+            return JsonResponse({
+                'status': 'sucesso',
+                'mensagem': 'Produto salvo localmente na vitrine!',
+                'link_afiliado': produto.link_afiliado,
+                'url_gerenciador_shopee': LINK_GERENCIADOR_VITRINE
+            })
         return JsonResponse({
             'status': 'sucesso_parcial',
             'mensagem': 'Produto pronto para adição.',
             'url_gerenciador_shopee': LINK_GERENCIADOR_VITRINE
         })
-
+    except Exception as e:
+        print(f"Erro ao adicionar à vitrine: {e}")
+        return JsonResponse({'status': 'erro', 'mensagem': str(e)}, status=400)
 def minha_vitrine(request):
     return redirect(LINK_SUA_VITRINE_SHOPEE)
-
-
 # ============================================================
 # MELHORIA 1 — Histórico de posts (marcar como postado hoje)
 # ============================================================
@@ -918,17 +803,13 @@ def posts_de_hoje():
     """Retorna os registros de postagem feitos hoje."""
     inicio_do_dia = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
     return PostRegistro.objects.filter(data_postagem__gte=inicio_do_dia)
-
 @require_POST
 def marcar_postado(request):
     try:
         item_id = request.POST.get('item_id', '')
         nome = request.POST.get('nome', '')
-
-        # Evita registrar o MESMO produto duas vezes no mesmo dia
         if item_id and not posts_de_hoje().filter(item_id=item_id).exists():
             PostRegistro.objects.create(item_id=item_id, nome=nome[:255])
-
         return JsonResponse({
             'status': 'sucesso',
             'quantidade_posts_hoje': posts_de_hoje().count(),
@@ -936,8 +817,6 @@ def marcar_postado(request):
     except Exception as e:
         print(f"Erro ao marcar produto como postado: {e}")
         return JsonResponse({'status': 'erro', 'mensagem': str(e)}, status=400)
-
-    
 # ============================================================
 # MELHORIA 3 — Meta diária ajustável (salva na sessão)
 # ============================================================
@@ -954,31 +833,28 @@ def definir_meta(request):
     except Exception as e:
         print(f"Erro ao definir meta: {e}")
         return JsonResponse({'status': 'erro', 'mensagem': str(e)}, status=400)
-
-   # ============================================================
+# ============================================================
 # MELHORIA 14 — Prompt Shopee Vídeo (diretrizes à risca)
-# Em PORTUGUÊS + storyboard obrigatório antes do vídeo.
-# SEM tempos de cena: a duração varia conforme a ferramenta
-# (Google Flow 10s, YouTube Create 8s, outras 15-30s).
 # ============================================================
 def gerar_prompt_shopee_video(nome_produto, nicho_busca=""):
     """Gera um prompt de vídeo para a SHOPEE VÍDEO seguindo as diretrizes
     da plataforma à risca, em português, com storyboard antes do vídeo."""
+    fallback = (
+        "Vídeo vertical 9:16 do produto EXATAMENTE como na imagem de referência. "
+        "PRIMEIRO, crie um STORYBOARD (imagem com os quadros da cena) mostrando o "
+        "produto idêntico à imagem — mesmo corte, cores, tecido e quantidade — para o "
+        "usuário conferir e aprovar; SÓ DEPOIS gere o vídeo final. "
+        "MOSTRE APENAS UM ÚNICO ITEM — proibido duplicar o produto ou adicionar outros. "
+        "Abertura: produto em foco com texto chamativo na tela. "
+        "Desenvolvimento: close-up mostrando o principal benefício. "
+        "Detalhes: tamanho, material e diferenciais. "
+        "Fechamento: CTA para comprar pelo link da Shopee. "
+        "Sem marca d'água de outras plataformas. Produto idêntico ao link. "
+        "Todo texto na tela em português do Brasil. "
+        "Adapte a duração ao limite da ferramenta."
+    )
     if not GEMINI_API_KEY:
-        return (
-            "Vídeo vertical 9:16 do produto EXATAMENTE como na imagem de referência. "
-            "PRIMEIRO, crie um STORYBOARD (imagem com os quadros da cena) mostrando o "
-            "produto idêntico à imagem — mesmo corte, cores, tecido e quantidade — para o "
-            "usuário conferir e aprovar; SÓ DEPOIS gere o vídeo final. "
-            "MOSTRE APENAS UM ÚNICO ITEM — proibido duplicar o produto ou adicionar outros. "
-            "Abertura: produto em foco com texto chamativo na tela. "
-            "Desenvolvimento: close-up mostrando o principal benefício. "
-            "Detalhes: tamanho, material e diferenciais. "
-            "Fechamento: CTA para comprar pelo link da Shopee. "
-            "Sem marca d'água de outras plataformas. Produto idêntico ao link. "
-            "Todo texto na tela em português do Brasil. "
-            "Adapte a duração ao limite da ferramenta."
-        )
+        return fallback
     prompt_sistema = f"""
 Você é um especialista em vídeos para a SHOPEE VÍDEO, a plataforma de vídeos curtos da Shopee.
 Produto: "{nome_produto}". Nicho informado (se houver): "{nicho_busca}".
@@ -1013,93 +889,15 @@ REGRAS DE ESCRITA DO PROMPT (OBRIGATÓRIAS)
 - Formato final: uma linha por etapa, separadas por " | ".
 Responda APENAS com o prompt do vídeo, sem explicações, sem títulos, sem texto extra.
 """
-    try:
-        modelos_disponiveis = ["gemini-3.6-flash", "gemini-3.5-flash-lite"]
-        texto_resposta = ""
-        for modelo in modelos_disponiveis:
-            url_api = f"https://generativelanguage.googleapis.com/v1beta/models/{modelo}:generateContent?key={GEMINI_API_KEY}"
-            payload = {"contents": [{"parts": [{"text": prompt_sistema}]}]}
-            for tentativa in range(2):
-                try:
-                    response = requests.post(url_api, json=payload, timeout=25)
-                    res_json = response.json()
-                    if "candidates" in res_json and len(res_json["candidates"]) > 0:
-                        texto_resposta = res_json["candidates"][0]["content"]["parts"][0]["text"]
-                        break
-                    elif "error" in res_json:
-                        codigo_erro = res_json["error"].get("code")
-                        print(f"[AVISO GEMINI SHOPEE - {modelo}]: Erro {codigo_erro}")
-                        if codigo_erro in (429, 503):
-                            time.sleep(1)
-                            continue
-                        break
-                except Exception as req_err:
-                    print(f"[ERRO REQUISIÇÃO GEMINI SHOPEE]: {req_err}")
-                    time.sleep(1)
-            if texto_resposta:
-                break
-        if texto_resposta.strip():
-            return texto_resposta.strip()
-        return (
-            "Vídeo vertical 9:16 do produto EXATAMENTE como na imagem de referência. "
-            "PRIMEIRO, crie um STORYBOARD (imagem com os quadros da cena) mostrando o "
-            "produto idêntico à imagem — mesmo corte, cores, tecido e quantidade — para o "
-            "usuário conferir e aprovar; SÓ DEPOIS gere o vídeo final. "
-            "MOSTRE APENAS UM ÚNICO ITEM — proibido duplicar o produto ou adicionar outros. "
-            "Abertura: produto em foco com texto chamativo na tela. "
-            "Desenvolvimento: close-up mostrando o principal benefício. "
-            "Detalhes: tamanho, material e diferenciais. "
-            "Fechamento: CTA para comprar pelo link da Shopee. "
-            "Sem marca d'água de outras plataformas. Produto idêntico ao link. "
-            "Todo texto na tela em português do Brasil. "
-            "Adapte a duração ao limite da ferramenta."
-        )
-    except Exception as e:
-        print(f"Erro ao gerar prompt Shopee Vídeo: {e}")
-        return (
-            "Vídeo vertical 9:16 do produto EXATAMENTE como na imagem de referência. "
-            "PRIMEIRO, crie um STORYBOARD (imagem com os quadros da cena) mostrando o "
-            "produto idêntico à imagem — mesmo corte, cores, tecido e quantidade — para o "
-            "usuário conferir e aprovar; SÓ DEPOIS gere o vídeo final. "
-            "MOSTRE APENAS UM ÚNICO ITEM — proibido duplicar o produto ou adicionar outros. "
-            "Abertura: produto em foco com texto chamativo na tela. "
-            "Desenvolvimento: close-up mostrando o principal benefício. "
-            "Detalhes: tamanho, material e diferenciais. "
-            "Fechamento: CTA para comprar pelo link da Shopee. "
-            "Sem marca d'água de outras plataformas. Produto idêntico ao link. "
-            "Todo texto na tela em português do Brasil. "
-            "Adapte a duração ao limite da ferramenta."
-        )
-
+    texto = _chamar_gemini(prompt_sistema)
+    if texto:
+        return texto
+    return fallback
 def _chamar_gemini_prompt(prompt_sistema):
-    """Envia um pedido ao Gemini e devolve o texto da resposta (ou '')."""
-    if not GEMINI_API_KEY:
-        return ""
-    modelos_disponiveis = ["gemini-3.6-flash", "gemini-3.5-flash-lite"]
-    for modelo in modelos_disponiveis:
-        url_api = f"https://generativelanguage.googleapis.com/v1beta/models/{modelo}:generateContent?key={GEMINI_API_KEY}"
-        payload = {"contents": [{"parts": [{"text": prompt_sistema}]}]}
-        for tentativa in range(2):
-            try:
-                response = requests.post(url_api, json=payload, timeout=25)
-                res_json = response.json()
-                if "candidates" in res_json and len(res_json["candidates"]) > 0:
-                    return res_json["candidates"][0]["content"]["parts"][0]["text"].strip()
-                elif "error" in res_json:
-                    codigo_erro = res_json["error"].get("code")
-                    print(f"[AVISO GEMINI]: Erro {codigo_erro}")
-                    if codigo_erro in (429, 503):
-                        time.sleep(1)
-                        continue
-                    break
-            except Exception as req_err:
-                print(f"[ERRO REQUISIÇÃO GEMINI]: {req_err}")
-                time.sleep(1)
-    return ""
-
+    """Compatibilidade: delega para a função única _chamar_gemini."""
+    return _chamar_gemini(prompt_sistema)
 def gerar_prompt_reels_tiktok_video(nome_produto, nicho_busca=""):
-    """Gera um prompt 9:16 estilo LIVRE (Reels/TikTok): mesmas regras do
-    prompt de redes sociais, com o formato de tela cheia explícito."""
+    """Gera um prompt 9:16 estilo LIVRE (Reels/TikTok)."""
     fallback = (
         "Vídeo vertical 9:16 (tela cheia) do produto EXATAMENTE como na imagem de referência, "
         "em estilo livre e criativo para Reels e TikTok. "
@@ -1138,11 +936,10 @@ REGRAS OBRIGATÓRIAS (NÃO NEGOCIÁVEL)
 10. Formato final: uma linha por etapa, separadas por " | ".
 Responda APENAS com o prompt do vídeo, sem explicações, sem títulos, sem texto extra.
 """
-    texto = _chamar_gemini_prompt(prompt_sistema)
+    texto = _chamar_gemini(prompt_sistema)
     if texto:
         return texto
     return fallback
-
 def gerar_prompt_feed_video(nome_produto, nicho_busca=""):
     """Gera um prompt 4:5 para o FEED do Facebook e do Instagram."""
     fallback = (
@@ -1186,37 +983,30 @@ REGRAS OBRIGATÓRIAS (NÃO NEGOCIÁVEL)
 11. Formato final: uma linha por etapa, separadas por " | ".
 Responda APENAS com o prompt do vídeo, sem explicações, sem títulos, sem texto extra.
 """
-    texto = _chamar_gemini_prompt(prompt_sistema)
+    texto = _chamar_gemini(prompt_sistema)
     if texto:
         return texto
     return fallback
 def montar_legenda_para_plataforma(copy, hashtags, plataforma='shopee'):
     """Monta a legenda (copy + hashtags) já no tamanho certo da plataforma.
-    Limites: shopee = 150 | reels = 2200 | feed = 2200.
-    Se passar do limite: primeiro reduz as hashtags (mantém as primeiras),
-    depois corta a copy pelo meio (mantém o gancho do começo e o CTA do fim)."""
+    Limites: shopee = 150 | reels = 2200 | feed = 2200."""
     limite = LIMITES_CARACTERES_LEGENDA.get(plataforma, 150)
     copy = (copy or '').strip()
     hashtags = [h for h in (hashtags or []) if h.strip()]
+    copy, hashtags = _remover_hashtags_duplicadas(copy, hashtags)
     hashtags_texto = ' '.join(hashtags)
-
     def montar():
         if hashtags_texto:
             return f"{copy}\n{hashtags_texto}"
         return copy
-
     legenda = montar()
     if len(legenda) <= limite:
         return legenda, limite, len(legenda)
-
-    # 1º passo: reduz as hashtags (as primeiras são as mais importantes)
     while hashtags and len(montar()) > limite:
         hashtags = hashtags[:-1]
         hashtags_texto = ' '.join(hashtags)
-
-    # 2º passo: se ainda passar, corta a copy mantendo começo e fim
     if len(montar()) > limite:
-        espaco_copy = limite - (len(hashtags_texto) + 1 if hashtags_texto else 0)
+        espaco_copy = (limite - (len(hashtags_texto) + 1)) if hashtags_texto else limite
         if espaco_copy <= 0:
             copy = ''
         elif len(copy) > espaco_copy:
@@ -1225,15 +1015,11 @@ def montar_legenda_para_plataforma(copy, hashtags, plataforma='shopee'):
             else:
                 metade = espaco_copy // 2
                 copy = copy[:metade].rstrip() + '…' + copy[-(espaco_copy - metade - 1):].lstrip()
-
     legenda = montar()
     return legenda, limite, len(legenda)
-
 @require_POST
 def gerar_prompt_shopee(request):
-    """Gera o prompt de vídeo conforme a plataforma escolhida no modal:
-    shopee (9:16 rígido), reels (9:16 livre) ou feed (4:5).
-    Também devolve a LEGENDA (copy + hashtags) já no tamanho certo da plataforma."""
+    """Gera o prompt de vídeo conforme a plataforma escolhida no modal."""
     try:
         nome = request.POST.get('nome', '')
         nicho_busca = request.POST.get('nicho', '')
@@ -1244,11 +1030,17 @@ def gerar_prompt_shopee(request):
             prompt = gerar_prompt_feed_video(nome, nicho_busca)
         else:
             prompt = gerar_prompt_shopee_video(nome, nicho_busca)
-        # Legenda no tamanho certo: usa a copy/hashtags que o modal já tem;
-        # se não vierem, gera com o Gemini (fallback — nada quebra).
         copy = request.POST.get('copy', '').strip()
         hashtags_raw = request.POST.get('hashtags', '')
         hashtags = [h.strip() for h in hashtags_raw.split(',') if h.strip()]
+        if not copy or not hashtags:
+            item_id = request.POST.get('item_id', '')
+            cache_ia = request.session.get(f'ia_produto_{item_id}') if item_id else None
+            if cache_ia:
+                if not copy:
+                    copy = cache_ia.get('copy', '')
+                if not hashtags:
+                    hashtags = cache_ia.get('hashtags', [])
         if not copy or not hashtags:
             dados_ia = gerar_conteudo_com_gemini(nome, nicho_busca)
             if not copy:
@@ -1267,21 +1059,3 @@ def gerar_prompt_shopee(request):
     except Exception as e:
         print(f"Erro ao gerar prompt: {e}")
         return JsonResponse({'status': 'erro', 'mensagem': str(e)}, status=400)
-    
-# ============================================================
-# MELHORIA 13 (restaurada) — cache de nomes de categorias
-# ============================================================
-ARQUIVO_CACHE_CATEGORIAS = os.path.join(os.path.dirname(__file__), 'categorias_cache.json')
-
-def _carregar_cache_categorias():
-    """Carrega o cache de nomes de categorias do arquivo JSON.
-    Devolve {} se o arquivo não existir ou estiver corrompido."""
-    try:
-        if os.path.exists(ARQUIVO_CACHE_CATEGORIAS):
-            with open(ARQUIVO_CACHE_CATEGORIAS, 'r', encoding='utf-8') as f:
-                cache = json.load(f)
-                if isinstance(cache, dict):
-                    return cache
-    except Exception as e:
-        print(f"[CAT CACHE] erro ao carregar: {e}")
-    return {}
