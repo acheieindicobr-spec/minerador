@@ -861,24 +861,37 @@ def definir_meta(request):
 def gerar_prompt_shopee_video(nome_produto, nicho_busca=""):
     """Prompt de vídeo de vitrine para o Shopee Vídeo. Curto, direto,
     com regras obrigatórias do projeto (storyboard prévio, fidelidade,
-    1 item, PT-BR)."""
+    1 item, PT-BR, SEM PREÇO)."""
+    import re
+    # Remove preços e percentuais do nome (ex.: "R$ 32,89", "-47%", "47% OFF")
+    nome_limpo = re.sub(r'R\$\s?\d+[\.,]?\d*', '', nome_produto, flags=re.IGNORECASE)
+    nome_limpo = re.sub(r'\s?\d+[\.,]\d{2}\b', '', nome_limpo)
+    nome_limpo = re.sub(r'\s?-?\d+\s?%(\s?OFF)?', '', nome_limpo, flags=re.IGNORECASE)
+    nome_limpo = re.sub(r'\s{2,}', ' ', nome_limpo).strip(' ,-')
+    nome_final = nome_limpo or nome_produto
+
     regras_seguranca = ''
-    if eh_moda_intima(nome_produto):
+    if eh_moda_intima(nome_final):
         regras_seguranca = (
             ' REGRAS DE SEGURANÇA (obrigatórias): sem nudez, sem poses sugestivas, '
             'sem conotação sexual; mostre o produto dobrado, no cabide ou em manequim.'
         )
     return (
-        f'Vídeo de vitrine para o Shopee Vídeo promovendo "{nome_produto}" '
+        f'Vídeo de vitrine para o Shopee Vídeo promovendo "{nome_final}" '
         f'(nicho: {nicho_busca or "geral"}).'
         ' ANTES DE GERAR O VÍDEO, CRIE O STORYBOARD quadro a quadro seguindo as etapas: '
         'ABERTURA, DESENVOLVIMENTO, DETALHES e FECHAMENTO — defina o que aparece em cada '
         'quadro e siga exatamente essa sequência no vídeo.'
-        ' O produto deve aparecer EXATAMENTE como na imagem de referência: mesmo corte, '
-        'mesmas cores, mesmo tecido e a MESMA quantidade de peças.'
+        ' FIDELIDADE TOTAL AO PRODUTO (não negociável): o vídeo deve mostrar EXATAMENTE '
+        'o produto da imagem de referência — mesmo modelo, mesmo corte, mesmas cores, '
+        'mesmo material e a MESMA quantidade de peças. PROIBIDO substituir por produto '
+        'parecido, similar, genérico, de outra cor, de outra versão ou de outra marca.'
         ' MOSTRE APENAS UM ÚNICO ITEM — PROIBIDO duplicar, espelhar, criar kits falsos '
         'ou adicionar outros produtos na cena.'
-        ' Todo texto na tela em PORTUGUÊS DO BRASIL (ex.: "Aproveite", "Oferta", "R$ 49,90").'
+        ' SEM PREÇO (obrigatório): PROIBIDO exibir preço, valores em reais, "R$", '
+        'percentuais de desconto ou qualquer número de valor na tela ou na narração. '
+        'Use apenas chamadas como "Aproveite", "Oferta", "Corre que é por tempo limitado".'
+        ' Todo texto na tela em PORTUGUÊS DO BRASIL.'
         ' Estrutura em etapas: ABERTURA, DESENVOLVIMENTO, DETALHES e FECHAMENTO, '
         'separadas por " | ".'
         ' Sem tempos de cena em segundos. Sem promessas enganosas.'
