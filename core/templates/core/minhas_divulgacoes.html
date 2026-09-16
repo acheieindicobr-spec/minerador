@@ -1,0 +1,215 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Minhas Divulgações — Achei & Indico</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+    background: #0f1115;
+    color: #e8e8e8;
+    min-height: 100vh;
+  }
+  .topo {
+    background: linear-gradient(135deg, #ff7a18, #ffb800);
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .topo h1 { color: #fff; font-size: 22px; font-weight: 800; }
+  .topo .voltar {
+    background: rgba(255,255,255,.2);
+    color: #fff;
+    text-decoration: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    transition: background .2s;
+  }
+  .topo .voltar:hover { background: rgba(255,255,255,.35); }
+  .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+  .resumo { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+  .cartao-resumo {
+    background: #1a1e26; border: 1px solid #2a2f3a; border-radius: 12px;
+    padding: 14px 20px; flex: 1; min-width: 160px; text-align: center;
+  }
+  .cartao-resumo .numero { font-size: 28px; font-weight: 800; color: #ffb800; }
+  .cartao-resumo .rotulo { font-size: 13px; color: #9aa3b2; margin-top: 4px; }
+  .grade {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+  }
+  .card {
+    background: #1a1e26; border: 1px solid #2a2f3a; border-radius: 14px;
+    overflow: hidden; display: flex; flex-direction: column;
+    transition: border-color .2s;
+  }
+  .card:hover { border-color: #ffb800; }
+  .card-imagem {
+    height: 180px; background: #22262f; display: flex; align-items: center;
+    justify-content: center; overflow: hidden;
+  }
+  .card-imagem img { width: 100%; height: 100%; object-fit: cover; }
+  .card-imagem .sem-imagem { color: #6b7280; font-size: 14px; }
+  .card-corpo { padding: 14px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+  .card-nome {
+    font-size: 15px; font-weight: 700; line-height: 1.35;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .badges { display: flex; gap: 6px; flex-wrap: wrap; }
+  .badge {
+    font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px;
+    text-transform: uppercase; letter-spacing: .4px;
+  }
+  .badge-shopee { background: #ee4d2d22; color: #ee4d2d; border: 1px solid #ee4d2d55; }
+  .badge-reels { background: #e1306c22; color: #ff5b8a; border: 1px solid #e1306c55; }
+  .badge-feed { background: #1877f222; color: #5b9bff; border: 1px solid #1877f255; }
+  .badge-data { background: #2a2f3a; color: #9aa3b2; border: 1px solid #333a47; }
+  .item-id {
+    font-family: Consolas, monospace; font-size: 12px; color: #ffb800;
+    background: #22262f; border: 1px dashed #3a4150; border-radius: 6px;
+    padding: 6px 10px; word-break: break-all; cursor: pointer;
+  }
+  .item-id:hover { border-color: #ffb800; }
+  .acoes { display: flex; gap: 8px; flex-wrap: wrap; margin-top: auto; }
+  .btn {
+    flex: 1; min-width: 120px; text-align: center; text-decoration: none;
+    padding: 10px 12px; border-radius: 8px; font-size: 13px; font-weight: 700;
+    border: none; cursor: pointer; transition: transform .1s, opacity .2s;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn-shopee { background: #ee4d2d; color: #fff; }
+  .btn-shopee:hover { opacity: .9; }
+  .btn-copiar { background: #2a2f3a; color: #e8e8e8; border: 1px solid #3a4150; }
+  .btn-copiar:hover { background: #333a47; }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .vazio { text-align: center; padding: 60px 20px; color: #9aa3b2; }
+  .vazio .icone { font-size: 48px; margin-bottom: 12px; }
+  .vazio h2 { color: #e8e8e8; margin-bottom: 8px; }
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: #1f2937; color: #fff; padding: 12px 20px; border-radius: 10px;
+    font-size: 14px; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,.4);
+    opacity: 0; transition: all .3s; z-index: 999; pointer-events: none;
+  }
+  .toast.mostrar { transform: translateX(-50%) translateY(0); opacity: 1; }
+</style>
+</head>
+<body>
+  <div class="topo">
+    <h1>📤 Minhas Divulgações</h1>
+    <a class="voltar" href="{% url 'pagina_mineracao' %}">← Voltar ao minerador</a>
+  </div>
+
+  <div class="container">
+    <div class="resumo">
+      <div class="cartao-resumo">
+        <div class="numero">{{ divulgacoes|length }}</div>
+        <div class="rotulo">Materiais gerados</div>
+      </div>
+      <div class="cartao-resumo">
+        <div class="numero">20</div>
+        <div class="rotulo">Lojas XTRA cadastradas</div>
+      </div>
+    </div>
+
+    {% if divulgacoes %}
+    <div class="grade">
+      {% for d in divulgacoes %}
+      <div class="card">
+        <div class="card-imagem">
+          {% if d.imagem_url %}
+            <img src="{{ d.imagem_url }}" alt="{{ d.nome }}" loading="lazy">
+          {% else %}
+            <span class="sem-imagem">Sem imagem</span>
+          {% endif %}
+        </div>
+        <div class="card-corpo">
+          <div class="card-nome">{{ d.nome }}</div>
+          <div class="badges">
+            {% if d.plataforma == 'shopee' %}
+              <span class="badge badge-shopee">Shopee Vídeo</span>
+            {% elif d.plataforma == 'reels' %}
+              <span class="badge badge-reels">Reels / TikTok</span>
+            {% elif d.plataforma == 'feed' %}
+              <span class="badge badge-feed">Feed</span>
+            {% else %}
+              <span class="badge badge-data">{{ d.plataforma }}</span>
+            {% endif %}
+            <span class="badge badge-data">{{ d.criado_em|date:"d/m/Y H:i" }}</span>
+          </div>
+          <div class="item-id" data-copiar="{{ d.item_id }}" title="Clique para copiar o ID do produto na Shopee">
+            🆔 {{ d.item_id }}
+          </div>
+          <div class="acoes">
+            {% if d.link_original %}
+              <a class="btn btn-shopee" href="{{ d.link_original }}" target="_blank" rel="noopener">
+                🔗 Ver Produto na Shopee
+              </a>
+            {% else %}
+              <button class="btn btn-shopee" disabled>🔗 Sem link</button>
+            {% endif %}
+            {% if d.prompt %}
+              <button class="btn btn-copiar" data-copiar="{{ d.prompt }}">📋 Copiar prompt</button>
+            {% endif %}
+            {% if d.legenda %}
+              <button class="btn btn-copiar" data-copiar="{{ d.legenda }}">📝 Copiar legenda</button>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="vazio">
+      <div class="icone">📭</div>
+      <h2>Nenhuma divulgação registrada ainda</h2>
+      <p>Quando você gerar um prompt ou legenda no minerador, o material aparece aqui<br>
+      com o botão <strong>Ver Produto na Shopee</strong> — para você nunca mais perder o anúncio.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="toast" id="toast">✅ Copiado!</div>
+
+  <script>
+    function copiarTexto(texto) {
+      var t = String(texto || '');
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(t).then(mostrarToast, function(){ copiarFallback(t); });
+      } else {
+        copiarFallback(t);
+      }
+    }
+    function copiarFallback(texto) {
+      var area = document.createElement('textarea');
+      area.value = texto;
+      area.style.position = 'fixed';
+      area.style.opacity = '0';
+      document.body.appendChild(area);
+      area.select();
+      try { document.execCommand('copy'); mostrarToast(); } catch (e) {}
+      document.body.removeChild(area);
+    }
+    function mostrarToast() {
+      var toast = document.getElementById('toast');
+      toast.classList.add('mostrar');
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(function(){ toast.classList.remove('mostrar'); }, 1800);
+    }
+    document.querySelectorAll('[data-copiar]').forEach(function(botao){
+      botao.addEventListener('click', function(){
+        copiarTexto(botao.getAttribute('data-copiar'));
+      });
+    });
+  </script>
+</body>
+</html>

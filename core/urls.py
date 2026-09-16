@@ -10,4 +10,11 @@ urlpatterns = [
     path('api/definir-meta/', views.definir_meta, name='definir_meta'),
     path('api/adicionar-vitrine/', views.adicionar_a_vitrine, name='adicionar_a_vitrine'),
     path('vitrine/', views.minha_vitrine, name='minha_vitrine'),
+    # ===== FASE P0 — R-95 (painel de divulgações) =====
+    path('divulgacoes/', views.minhas_divulgacoes, name='minhas_divulgacoes'),
+    path('vender-sem-aparecer/', views.pagina_vender_sem_aparecer, name='vender_sem_aparecer'),
+    path('comissoes/', views.pagina_escolinha_comissao, name='escolinha_comissoes'),
+    path('api/registrar-divulgacao/', views.registrar_divulgacao, name='registrar_divulgacao'),
+    path('produto_detalhes/<int:produto_id>/', views.produto_detalhes, name='produto_detalhes'),
+    path('gerar_conteudo/', views.gerar_conteudo, name='gerar_conteudo'),
 ]

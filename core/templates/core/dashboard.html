@@ -117,6 +117,7 @@
       gap: 7px;
       transition: all .15s ease;
       white-space: nowrap;
+      text-decoration: none;
     }
     .btn-refresh:hover { border-color: var(--primary); color: var(--primary-2); background: var(--surface-2); }
     .btn-refresh:disabled { opacity: .6; cursor: not-allowed; }
@@ -239,7 +240,126 @@
       border-radius: 6px;
       white-space: nowrap;
     }
-    .est-venda { color: var(--text-muted); font-size: 11.5px; white-space: nowrap; }
+    .badge-score {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #fff;
+}
+.score-alto { background: #16a34a; }   /* verde — oportunidade quente */
+.score-medio { background: #d97706; }  /* amarelo — boa, pode esperar */
+.score-baixo { background: #6b7280; }  /* cinza — deixa para depois */
+.score-motivo {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-style: italic;
+}
+.produto-dia-section { margin-top: 4px; }
+.produto-dia-card {
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.produto-dia-img { width: 100%; height: 110px; object-fit: cover; }
+.produto-dia-titulo { font-size: 0.95rem; font-weight: 700; color: #f1f5f9; line-height: 1.3; }
+.produto-dia-preco { font-size: 1.1rem; font-weight: 800; color: #f97316; }
+.produto-dia-motivo {
+  font-size: 0.85rem;
+  color: #fbbf24;
+  font-style: italic;
+  background: rgba(251, 191, 36, 0.08);
+  padding: 6px 10px;
+  border-radius: 8px;
+  border-left: 3px solid #f97316;
+}
+.btn-copiloto {
+  background: linear-gradient(135deg, var(--primary), var(--primary-2));
+  color: #fff; font-weight: 700; border: none;
+  border-radius: var(--radius-sm);
+  transition: filter .15s ease;
+}
+.btn-copiloto:hover { filter: brightness(1.08); color: #fff; }
+.copiloto-painel {
+  background: #0f172a; border: 1px solid #334155;
+  border-radius: 12px; padding: 12px;
+}
+.copiloto-status { color: #f97316; font-weight: 600; font-size: 0.8rem; }
+.top5-section {
+  background: #1e293b;                /* fundo escuro combinando com o painel */
+  border-radius: 16px;
+  padding: 16px;
+  border: 1px solid #334155;          /* borda sutil do tema */
+}
+.top5-section h2 {
+  color: #f8fafc;                     /* título BRANCO — leitura perfeita */
+  font-weight: 700;
+}
+.top5-section h2 small {
+  color: #f97316;                     /* detalhe "sua meta" em laranja vibrante */
+  font-weight: 600;
+}
+.top5-card {
+  background: #0f172a;                /* card escuro, igual aos cards do painel */
+  border: 1px solid #334155;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.top5-img { height: 110px; object-fit: cover; }
+.top5-posicao {
+  position: absolute; top: 8px; left: 8px;
+  background: #ea580c;                /* laranja vibrante do tema */
+  color: #fff;
+  font-weight: 700; font-size: 0.7rem;
+  padding: 2px 8px; border-radius: 12px;
+}
+.top5-score {
+  position: absolute; top: 8px; right: 8px;
+  font-size: 0.7rem; padding: 2px 8px;
+}
+.top5-titulo {
+  font-size: 0.78rem; font-weight: 600;
+  color: #f1f5f9;                     /* texto claro legível no card escuro */
+  line-height: 1.2;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.top5-preco {
+  font-size: 0.9rem; font-weight: 700;
+  color: #f97316;                     /* laranja vibrante, igual ao resto */
+}
+.lote-painel {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 16px;
+  padding: 16px;
+}
+.lote-status { color: #f97316; font-weight: 600; font-size: 0.85rem; }
+.lote-item {
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+.lote-item-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.lote-numero {
+  background: #ea580c; color: #fff; font-weight: 700;
+  font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; flex-shrink: 0;
+}
+.lote-titulo {
+  flex: 1; font-size: 0.85rem; font-weight: 600; color: #f1f5f9;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.lote-estado { font-size: 0.8rem; font-weight: 600; color: #fbbf24; flex-shrink: 0; }
+.lote-label { font-size: 0.75rem; color: #94a3b8; font-weight: 600; }
+.lote-textarea {
+  background: #0b1220; color: #e2e8f0;
+  border: 1px solid #334155; font-size: 0.8rem;
+}
     .btn-preparar {
       margin-top: auto;
       background: linear-gradient(135deg, var(--primary), var(--primary-2));
@@ -423,44 +543,6 @@
     .contador-caracteres.ok { color: var(--success); }
     .contador-caracteres.quase { color: #ffb300; }
     .contador-caracteres.estourou { color: #ff5252; }
-    .progress-stats {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: rgba(0, 230, 118, 0.06);
-      border: 1px solid rgba(0, 230, 118, 0.25);
-      border-radius: 999px;
-      padding: 6px 14px;
-      min-width: 175px;
-    }
-    .progress-icon { font-size: 16px; }
-    .progress-info { display: flex; flex-direction: column; line-height: 1.1; }
-    .progress-label {
-      color: var(--text-muted);
-      font-size: 10px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: .04em;
-    }
-    .progress-value {
-      color: var(--success);
-      font-size: 13px;
-      font-weight: 800;
-    }
-    .progress-track {
-      flex: 1;
-      height: 6px;
-      background: var(--surface-2);
-      border-radius: 999px;
-      overflow: hidden;
-      min-width: 60px;
-    }
-    .progress-fill {
-      height: 100%;
-      background: linear-gradient(90deg, var(--success), #69f0ae);
-      border-radius: 999px;
-      transition: width .3s ease;
-    }
     .btn-marcar-postado {
       background: transparent;
       color: var(--success);
@@ -645,6 +727,115 @@
       color: #1e293b;
       font-weight: 500;
     }
+    /* ===== FASE P0 — SELOS NOS CARDS (R-02, R-22, R-86) ===== */
+    .selos-linha {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-bottom: 10px;
+    }
+    .badge-selo {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10.5px;
+      font-weight: 700;
+      border-radius: 999px;
+      padding: 3px 9px;
+      white-space: nowrap;
+    }
+    .badge-selo.cookie {
+      background: rgba(255, 193, 7, 0.12);
+      color: #ffc107;
+      border: 1px solid rgba(255, 193, 7, 0.35);
+    }
+    .badge-selo.comissao_extra {
+      background: rgba(255, 87, 34, 0.16);
+      color: #ff7043;
+      border: 1px solid rgba(255, 87, 34, 0.45);
+    }
+    .badge-loja-xtra {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10.5px;
+      font-weight: 800;
+      border-radius: 999px;
+      padding: 3px 9px;
+      white-space: nowrap;
+      background: linear-gradient(135deg, #7c3aed, #a855f7);
+      color: #fff;
+      border: 1px solid rgba(168, 85, 247, 0.5);
+      box-shadow: 0 2px 8px rgba(124, 58, 237, 0.35);
+    }
+    .badge-onda {
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  color: #fff;
+  font-weight: 700;
+}
+    /* ===== FASE P0 — FILTROS RÁPIDOS ===== */
+    .filtros-rapidos {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+    .btn-filtro-rapido {
+      background: var(--surface);
+      color: var(--primary-2);
+      border: 1px solid rgba(255, 102, 0, 0.35);
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 14px;
+      text-decoration: none;
+      transition: all .15s ease;
+      white-space: nowrap;
+    }
+    .btn-filtro-rapido:hover {
+      background: rgba(255, 102, 0, 0.12);
+      border-color: var(--primary);
+      color: var(--primary-2);
+    }
+    /* ===== FASE P0 — MODAL NEUTRO + R-95 ===== */
+    .alerta-gerar {
+      background: rgba(255, 102, 0, 0.08);
+      border: 1px dashed rgba(255, 102, 0, 0.45);
+      color: #ffb800;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 12.5px;
+      font-weight: 600;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .item-id-modal {
+      font-family: Consolas, monospace;
+      font-size: 12px;
+      color: #ffb800;
+      background: var(--surface-2);
+      border: 1px dashed var(--border-hover);
+      border-radius: 6px;
+      padding: 5px 10px;
+      cursor: pointer;
+      word-break: break-all;
+    }
+    .item-id-modal:hover { border-color: #ffb800; }
+    .btn-ver-produto {
+      background: #ee4d2d;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 12px;
+      transition: filter .15s ease;
+      white-space: nowrap;
+    }
+    .btn-ver-produto:hover { filter: brightness(1.12); color: #fff; }
     .footer-confianca {
       background: var(--surface);
       border-top: 1px solid var(--border);
@@ -683,17 +874,201 @@
       color: var(--text-muted);
       font-size: 11.5px;
     }
+    /* ===== P1-3 — ALERTA COMERCIAL ===== */
+    .alerta-comercial {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: linear-gradient(135deg, rgba(255, 102, 0, 0.16), rgba(255, 140, 51, 0.08));
+      border: 1px solid rgba(255, 102, 0, 0.45);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      margin-bottom: 22px;
+      color: var(--text);
+      font-size: 13.5px;
+      font-weight: 600;
+      box-shadow: 0 4px 18px rgba(255, 102, 0, 0.12);
+    }
+    .alerta-comercial .alerta-icone { font-size: 22px; line-height: 1; }
+    .alerta-comercial strong { color: var(--primary-2); font-weight: 800; }
+    /* ===== P1-5 — PAINEL DE CONSTÂNCIA SEMANAL (v2) ===== */
+    .painel-constancia {
+      background: linear-gradient(180deg, #171b21 0%, #14171c 100%);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 22px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    }
+    .pc-topo {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 18px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .pc-titulo {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -0.01em;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .pc-titulo .pc-ico {
+      width: 30px; height: 30px;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: rgba(255, 102, 0, 0.12);
+      border: 1px solid rgba(255, 102, 0, 0.3);
+      border-radius: 9px;
+      font-size: 15px;
+    }
+    .pc-streak {
+      background: rgba(255, 102, 0, 0.12);
+      color: var(--primary-2);
+      border: 1px solid rgba(255, 102, 0, 0.35);
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .pc-dias {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+      margin: 6px 0 18px;
+    }
+    .pc-dia {
+      position: relative;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 4px 9px;
+      text-align: center;
+      transition: border-color .15s ease;
+    }
+    .pc-dia:hover { border-color: var(--border-hover); }
+    .pc-dia .pc-nome {
+      font-size: 10px;
+      color: var(--text-muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    .pc-dia .pc-num {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text);
+      margin: 4px 0 6px;
+      font-variant-numeric: tabular-nums;
+    }
+    .pc-dia.pc-atingiu .pc-num { color: var(--success); }
+    .pc-dia.pc-hoje {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 1px var(--primary), 0 4px 14px rgba(255, 102, 0, 0.18);
+    }
+    .pc-dia.pc-hoje .pc-nome { color: var(--primary-2); }
+    .pc-tag-hoje {
+      position: absolute;
+      top: -9px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, var(--primary), var(--primary-2));
+      color: #fff;
+      font-size: 8.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      padding: 2px 9px;
+      border-radius: 999px;
+      box-shadow: 0 2px 6px rgba(255, 102, 0, 0.4);
+      white-space: nowrap;
+    }
+    .pc-barra {
+      height: 4px;
+      background: var(--surface-2);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .pc-barra span {
+      display: block;
+      height: 100%;
+      background: var(--primary);
+      border-radius: 999px;
+    }
+    .pc-barra.pc-ok span { background: var(--success); }
+    .pc-hoje-area {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      background: rgba(255, 102, 0, 0.05);
+      border: 1px solid rgba(255, 102, 0, 0.18);
+      border-radius: 12px;
+      padding: 12px 16px;
+    }
+    .pc-hoje-texto { font-size: 13px; color: var(--text); }
+    .pc-hoje-texto strong { color: var(--primary-2); font-weight: 800; }
+    .pc-progresso {
+      flex: 1;
+      min-width: 140px;
+      height: 8px;
+      background: var(--surface-2);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .pc-progresso span {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--primary-2));
+      border-radius: 999px;
+      transition: width .4s ease;
+    }
+    .pc-frase {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      font-weight: 600;
+      flex-basis: 100%;
+    }
+    /* ===== P2-2 — COMISSÃO EM DESTAQUE NO CARD ===== */
+    .badge-comissao-alta {
+      background: rgba(0, 230, 118, 0.14) !important;
+      color: var(--success) !important;
+      border-color: rgba(0, 230, 118, 0.45) !important;
+    }
+    .ganho-venda {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0, 230, 118, 0.07);
+      border: 1px dashed rgba(0, 230, 118, 0.35);
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 8px;
+      padding: 6px 10px;
+      margin-bottom: 10px;
+      width: fit-content;
+    }
+    .ganho-venda strong { color: var(--success); font-weight: 800; }
+    /* ===== P2-3 — TRAVA 150 SHOPEE + AVISO ===== */
+    .aviso-limite-shopee {
+      display: none;
+      background: rgba(255, 82, 82, 0.1);
+      border: 1px solid rgba(255, 82, 82, 0.35);
+      color: #ff8a80;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 12px;
+      margin-top: 6px;
+    }
   </style>
 </head>
 <body>
-<script>
-function imagemProdutoFalhou() {
-    var img = document.getElementById('imagemProdutoModal');
-    var ph = document.getElementById('imagemProdutoPlaceholder');
-    if (img) img.style.display = 'none';
-    if (ph) ph.style.display = 'block';
-}
-</script>
 {% csrf_token %}
 <div class="container py-4">
   <!-- ===== CABEÇALHO ===== -->
@@ -711,21 +1086,6 @@ function imagemProdutoFalhou() {
       {% if total_itens %}
       <span class="badge-total"><i class="bi bi-box-seam"></i> {{ total_itens }} produtos encontrados</span>
       {% endif %}
-      <div class="progress-stats" id="contadorPosts" data-meta="{{ meta_diaria }}">
-        <span class="progress-icon">📊</span>
-        <div class="progress-info">
-          <span class="progress-label">Posts hoje</span>
-          <span class="progress-value" id="postsHojeValor">{{ quantidade_posts_hoje }}/{{ meta_diaria }}</span>
-        </div>
-        <div class="progress-track">
-          <div class="progress-fill" id="postsHojeBarra" style="width: {% widthratio quantidade_posts_hoje meta_diaria 100 %}%;"></div>
-        </div>
-      </div>
-      <div class="meta-input-group" title="Defina quantos posts você quer fazer por dia">
-        <span class="meta-input-label">🎯 Meta diária</span>
-        <input type="number" class="meta-input" id="metaDiariaInput" min="1" max="50" value="{{ meta_diaria }}">
-        <button type="button" class="btn-meta-salvar" id="btnSalvarMeta" onclick="salvarMeta()">Salvar</button>
-      </div>
       <div class="qtd-select-group" title="Quantos produtos buscar na Shopee (máx. 250)">
         <span class="qtd-select-label">📦 Produtos</span>
         <select class="qtd-select" id="qtdProdutosSelect" onchange="mudarQuantidade()">
@@ -735,13 +1095,60 @@ function imagemProdutoFalhou() {
           <option value="250" {% if total_desejado == 250 %}selected{% endif %}>250</option>
         </select>
       </div>
+      <a class="btn-refresh" href="{% url 'minhas_divulgacoes' %}" title="Ver todos os materiais gerados (R-95)">
+        <i class="bi bi-collection"></i> Minhas Divulgações
+      </a>
+      <a class="btn-refresh" href="{% url 'vender_sem_aparecer' %}" title="Gerar os 8 formatos de divulgação (R-87 a R-94)">
+        <i class="bi bi-megaphone"></i> Vender Sem Aparecer
+      </a>
+      <a class="btn-refresh" href="{% url 'escolinha_comissoes' %}" title="Aprender sobre as lojas que pagam mais comissão (R-23 a R-25)">
+        <i class="bi bi-mortarboard"></i> Comissões
+      </a>
       <button type="button" class="btn-refresh" id="btnAtualizar" onclick="atualizarProdutos()" title="Buscar os mais vendidos novamente agora">
         <i class="bi bi-arrow-clockwise"></i> Atualizar
       </button>
     </div>
   </header>
-  <!-- ===== BARRA DE BUSCA ===== -->
+  <!-- ===== P1-3 — ALERTA COMERCIAL ===== -->
+  {% if alerta_comercial %}
+  <div class="alerta-comercial" role="alert">
+    <span class="alerta-icone">{{ alerta_comercial.emoji }}</span>
+    <span><strong>{{ alerta_comercial.nome }}</strong> em {{ alerta_comercial.dias }} dia{{ alerta_comercial.dias|pluralize }} — prepare conteúdo de <strong>{{ alerta_comercial.nicho }}</strong> agora!</span>
+  </div>
+  {% endif %}
+  <!-- ===== P1-5 — PAINEL DE CONSTÂNCIA SEMANAL ===== -->
+  <div class="painel-constancia">
+    <div class="pc-topo">
+      <span class="pc-titulo"><span class="pc-ico">📅</span> Constância da semana</span>
+      {% if painel_constancia.streak > 0 %}
+      <span class="pc-streak">🔥 {{ painel_constancia.streak }} dia{{ painel_constancia.streak|pluralize }} batendo a meta</span>
+      {% else %}
+      <span class="pc-streak">🌱 Meta: {{ painel_constancia.meta }} posts/dia</span>
+      {% endif %}
+    </div>
+    <div class="pc-dias">
+      {% for d in painel_constancia.dias %}
+      <div class="pc-dia {% if d.atingiu %}pc-atingiu{% endif %} {% if d.e_hoje %}pc-hoje{% endif %}">
+        {% if d.e_hoje %}<span class="pc-tag-hoje">Hoje</span>{% endif %}
+        <div class="pc-nome">{{ d.rotulo }}</div>
+        <div class="pc-num">{{ d.posts }}{% if d.atingiu %} ✓{% endif %}</div>
+        <div class="pc-barra {% if d.atingiu %}pc-ok{% endif %}"><span style="width:{% widthratio d.posts painel_constancia.meta 100 %}%"></span></div>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="pc-hoje-area">
+      <span class="pc-hoje-texto"><strong>Hoje:</strong> {{ painel_constancia.posts_hoje }} de {{ painel_constancia.meta }} posts</span>
+      <div class="pc-progresso"><span style="width:{{ painel_constancia.progresso }}%"></span></div>
+      <span class="pc-frase">{{ painel_constancia.mensagem }}</span>
+    </div>
+  </div>
+  <!-- ===== BARRA DE BUSCA (preserva os filtros = parametrização prévia) ===== -->
   <form method="get" class="search-bar">
+    <input type="hidden" name="total" value="{{ total_desejado }}">
+    <input type="hidden" name="preco_max" value="{{ preco_max|default_if_none:'' }}">
+    <input type="hidden" name="comissao_min" value="{{ comissao_min|default_if_none:'' }}">
+    <input type="hidden" name="venda_min" value="{{ venda_min|default_if_none:'' }}">
+    <input type="hidden" name="categoria" value="{{ categoria_filtro }}">
     <div class="input-group">
       <input type="text" name="q" value="{{ query_atual }}" class="form-control"
              placeholder="Buscar nicho... Ex: fone bluetooth, cozinha, beleza, casa">
@@ -773,6 +1180,13 @@ function imagemProdutoFalhou() {
     <button type="submit" class="btn-filtro-aplicar">Aplicar</button>
     <a href="?q={{ query_atual|urlencode }}&total={{ total_desejado }}" class="btn-filtro-limpar">Limpar</a>
   </form>
+  <!-- ===== FILTROS RÁPIDOS (FASE P0) ===== -->
+  <div class="filtros-rapidos">
+    <span class="filtros-label">⚡ Rápidos:</span>
+    <a class="btn-filtro-rapido" href="?q={{ query_atual|urlencode }}&total={{ total_desejado }}&preco_max=100">💸 Até R$ 100</a>
+    <a class="btn-filtro-rapido" href="?q={{ query_atual|urlencode }}&total={{ total_desejado }}&comissao_min=25">🔥 Comissão ≥ 25%</a>
+    <a class="btn-filtro-rapido" href="?q={{ query_atual|urlencode }}&total={{ total_desejado }}&venda_min=10000">📈 10k+ vendas</a>
+  </div>
   {% if total_itens != total_sem_filtro %}
   <div class="filtros-resultado">
     🔎 Mostrando <strong>{{ total_itens }}</strong> de <strong>{{ total_sem_filtro }}</strong> produtos
@@ -811,7 +1225,144 @@ function imagemProdutoFalhou() {
     </nav>
   </div>
   {% endif %}
-  <!-- ===== LISTAGEM DE CARDS ===== -->
+  <!-- ===== PRODUTO DO DIA (Fase Inteligência) ===== -->
+{% if top5_produtos %}
+<section class="produto-dia-section mb-4">
+  <div class="d-flex align-items-center justify-content-between mb-2">
+    <h2 class="h5 mb-0">🏆 Produto do dia</h2>
+    {% if top5_produtos.0.score_oportunidade %}
+    <span class="badge-score score-alto">🔥 {{ top5_produtos.0.score_oportunidade }}</span>
+    {% endif %}
+  </div>
+  <div class="produto-dia-card">
+    <div class="row g-0 align-items-center">
+      <div class="col-4 col-md-3">
+        {% if top5_produtos.0.imagem %}
+        <img src="{{ top5_produtos.0.imagem }}" class="produto-dia-img" alt="{{ top5_produtos.0.titulo }}" loading="lazy" onerror="this.style.display='none'">
+        {% endif %}
+      </div>
+      <div class="col-8 col-md-9">
+        <div class="produto-dia-body p-3">
+          <p class="produto-dia-titulo mb-1" title="{{ top5_produtos.0.titulo }}">{{ top5_produtos.0.titulo|truncatechars:60 }}</p>
+          <p class="produto-dia-preco mb-2">R$ {{ top5_produtos.0.preco }}</p>
+          <p class="produto-dia-motivo mb-2">💡 Por que divulgar hoje: {{ top5_produtos.0.motivo_score }}</p>
+          <button type="button"
+                  class="btn btn-preparar btn-sm btn-abrir-modal"
+                  data-bs-toggle="modal"
+                  data-bs-target="#modalGeradorIA"
+                  data-item-id="{{ top5_produtos.0.item_id }}"
+                  data-titulo="{{ top5_produtos.0.titulo }}"
+                  data-preco="{{ top5_produtos.0.preco }}"
+                  data-comissao="{{ top5_produtos.0.comissao }}"
+                  data-vendas="{{ top5_produtos.0.vendas }}"
+                  data-imagem="{{ top5_produtos.0.imagem }}"
+                  data-loja="{{ top5_produtos.0.loja }}"
+                  data-link="{{ top5_produtos.0.link_afiliado }}">
+            ✨ Trabalhar com este produto
+          </button>
+                    <button type="button"
+                  id="btnCopilotoDia"
+                  class="btn btn-copiloto btn-sm mt-2 w-100"
+                  data-item-id="{{ top5_produtos.0.item_id }}"
+                  data-titulo="{{ top5_produtos.0.titulo }}"
+                  data-preco="{{ top5_produtos.0.preco }}"
+                  data-comissao="{{ top5_produtos.0.comissao }}"
+                  data-vendas="{{ top5_produtos.0.vendas }}"
+                  data-imagem="{{ top5_produtos.0.imagem }}"
+                  data-loja="{{ top5_produtos.0.loja }}"
+                  data-link="{{ top5_produtos.0.link_afiliado }}">
+            🤖 Gerar material do dia
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- ===== COPILOTO DO DIA — RESULTADO (Fase Inteligência) ===== -->
+<div id="copilotoPainel" class="copiloto-painel mb-4" style="display:none;">
+  <div class="d-flex align-items-center justify-content-between mb-2">
+    <h6 class="mb-0">🤖 Material do produto do dia</h6>
+    <span id="copilotoStatus" class="copiloto-status">Aguardando...</span>
+  </div>
+  <div class="mb-2">
+    <label class="lote-label">Legenda (Shopee Vídeo):</label>
+    <textarea class="form-control lote-textarea" id="copilotoLegenda" rows="2" readonly></textarea>
+  </div>
+  <div class="mb-2">
+    <label class="lote-label">Prompt do vídeo (com storyboard):</label>
+    <textarea class="form-control lote-textarea" id="copilotoPrompt" rows="3" readonly></textarea>
+  </div>
+  <div class="mb-2">
+    <label class="lote-label">Link de afiliado:</label>
+    <input type="text" class="form-control lote-textarea" id="copilotoLink" readonly>
+  </div>
+  <button type="button" id="btnCopilotoCopiar" class="btn btn-sm btn-outline-light" onclick="copilotoCopiar()">📋 Copiar tudo</button>
+  <button type="button" id="btnCopilotoAB" class="btn btn-sm btn-outline-light mt-2" onclick="gerarVariacoesAB()">🎨 Ver 3 legendas (A/B)</button>
+  <div id="copilotoAB" class="mt-3" style="display:none;"></div>
+</div>
+{% endif %}
+  <!-- ===== TOP 5 DO DIA (Fase Inteligência) ===== -->
+{% if top5_produtos %}
+<section class="top5-section mb-4">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+    <h2 class="h5 mb-0">🔥 Top 5 do dia</h2>
+    <button type="button" id="btnGerarTop5" class="btn btn-preparar btn-sm">✨ Gerar material dos Top 5</button>
+  </div>
+  <div class="row g-3">
+    {% for produto in top5_produtos %}
+    <div class="col-6 col-md-4 col-lg-2">
+      <div class="card top5-card h-100">
+        <div class="position-relative">
+          {% if produto.imagem %}
+          <img src="{{ produto.imagem }}" class="card-img-top top5-img" alt="{{ produto.titulo }}" loading="lazy" onerror="this.style.display='none'">
+          {% endif %}
+          <span class="top5-posicao">#{{ forloop.counter }}</span>
+          {% if produto.score_oportunidade %}
+          {% if produto.score_oportunidade >= 70 %}
+          <span class="badge-score score-alto top5-score" title="Por que divulgar hoje: {{ produto.motivo_score }}">🔥 {{ produto.score_oportunidade }}</span>
+          {% elif produto.score_oportunidade >= 40 %}
+          <span class="badge-score score-medio top5-score" title="Por que divulgar hoje: {{ produto.motivo_score }}">⭐ {{ produto.score_oportunidade }}</span>
+          {% else %}
+          <span class="badge-score score-baixo top5-score" title="Por que divulgar hoje: {{ produto.motivo_score }}">• {{ produto.score_oportunidade }}</span>
+          {% endif %}
+          {% endif %}
+        </div>
+        <div class="card-body p-2 d-flex flex-column">
+          <p class="top5-titulo mb-1" title="{{ produto.titulo }}">{{ produto.titulo|truncatechars:40 }}</p>
+          <p class="top5-preco mb-2">R$ {{ produto.preco }}</p>
+          <button type="button"
+                  class="btn btn-preparar btn-sm w-100 mt-auto btn-abrir-modal"
+                  data-bs-toggle="modal"
+                  data-bs-target="#modalGeradorIA"
+                  data-item-id="{{ produto.item_id }}"
+                  data-titulo="{{ produto.titulo }}"
+                  data-preco="{{ produto.preco }}"
+                  data-comissao="{{ produto.comissao }}"
+                  data-vendas="{{ produto.vendas }}"
+                  data-imagem="{{ produto.imagem }}"
+                  data-loja="{{ produto.loja }}"
+                  data-link="{{ produto.link_afiliado }}">
+            ✨ Trabalhar
+          </button>
+          {% if produto.item_id in posts_hoje_ids %}
+          <button type="button" class="btn btn-postado btn-sm w-100 mt-2" disabled>✅ Postado hoje</button>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+  <!-- ===== PAINEL DE LOTE — MATERIAL DOS TOP 5 (Fase Inteligência) ===== -->
+<section id="painelLoteTop5" class="lote-painel mb-4" style="display:none;">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h2 class="h5 mb-0">📦 Material dos Top 5</h2>
+    <span id="loteStatus" class="lote-status">Aguardando...</span>
+  </div>
+  <div id="loteFila"></div>
+</section>
+<!-- ===== LISTAGEM DE CARDS ===== -->
   <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4 mb-5">
     {% for produto in produtos %}
     <div class="col">
@@ -825,15 +1376,42 @@ function imagemProdutoFalhou() {
           <div class="product-price-row">
             <span class="product-price">R$ {{ produto.preco }}</span>
             {% if produto.comissao %}
-              <span class="badge-comissao">{{ produto.comissao }}% Comis.</span>
+            <span class="badge-comissao {% if produto.comissao >= 15 %}badge-comissao-alta{% endif %}">{{ produto.comissao }}% Comis.</span>
             {% endif %}
           </div>
+          {% if produto.comissao_estimada %}
+          <div class="ganho-venda">
+            <i class="bi bi-cash-stack"></i> Você ganha <strong>~R$ {{ produto.comissao_estimada }}</strong> por venda
+          </div>
+          {% endif %}
+          <!-- ===== SELOS FASE P0 (R-02, R-22, R-86) ===== -->
+          <div class="selos-linha">
+            {% if produto.eh_loja_xtra %}
+            <span class="badge-loja-xtra" title="Loja oficial com programa XTRA COMMISSION">🏬 Loja XTRA</span>
+            {% endif %}
+                        {% if produto.pegando_onda %}
+            <span class="badge-selo badge-onda" title="{{ produto.onda_info }}">🚀 Pegando onda</span>
+            {% endif %}
+            {% for selo in produto.selos %}
+            <span class="badge-selo {{ selo.tipo }}">{{ selo.texto }}</span>
+            {% endfor %}
+          </div>
+                    <!-- ===== SCORE DE OPORTUNIDADE (Fase Inteligência) ===== -->
+          {% if produto.score_oportunidade %}
+          <div class="d-flex align-items-center gap-2 mb-3">
+            {% if produto.score_oportunidade >= 70 %}
+            <span class="badge-score score-alto" title="Por que divulgar hoje: {{ produto.motivo_score }}">🔥 {{ produto.score_oportunidade }}</span>
+            {% elif produto.score_oportunidade >= 40 %}
+            <span class="badge-score score-medio" title="Por que divulgar hoje: {{ produto.motivo_score }}">⭐ {{ produto.score_oportunidade }}</span>
+            {% else %}
+            <span class="badge-score score-baixo" title="Por que divulgar hoje: {{ produto.motivo_score }}">• {{ produto.score_oportunidade }}</span>
+            {% endif %}
+            <span class="score-motivo">{{ produto.motivo_score }}</span>
+          </div>
+          {% endif %}
           {% if produto.vendas %}
           <div class="d-flex align-items-center gap-2 mb-3">
             <span class="badge-vendas"><i class="bi bi-fire"></i> {{ produto.vendas }} vendas</span>
-            {% if produto.comissao_estimada %}
-              <span class="est-venda">~R$ {{ produto.comissao_estimada }}/venda</span>
-            {% endif %}
           </div>
           {% endif %}
           <button type="button"
@@ -846,6 +1424,7 @@ function imagemProdutoFalhou() {
                   data-comissao="{{ produto.comissao }}"
                   data-vendas="{{ produto.vendas }}"
                   data-imagem="{{ produto.imagem }}"
+                  data-loja="{{ produto.loja }}"
                   data-link="{{ produto.link_afiliado }}">
             ✨ Preparar com IA
           </button>
@@ -914,7 +1493,7 @@ function imagemProdutoFalhou() {
         <ul>
           <li>1. Busque um nicho ou produto</li>
           <li>2. Clique em "✨ Preparar com IA"</li>
-          <li>3. Copie o prompt, o post e o link de afiliado</li>
+          <li>3. Escolha a plataforma e copie o material pronto</li>
         </ul>
       </div>
       <div class="col-md-4">
@@ -928,7 +1507,8 @@ function imagemProdutoFalhou() {
     </div>
   </div>
 </footer>
-<!-- ============ MODAL DO GERADOR DE IA ============ -->
+<!-- FIM DA PARTE 2 — o modal e os scripts continuam na Parte 3 -->
+ <!-- ============ MODAL DO GERADOR DE IA ============ -->
 <div class="modal fade" id="modalGeradorIA" tabindex="-1" aria-labelledby="modalGeradorIALabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
@@ -948,6 +1528,17 @@ function imagemProdutoFalhou() {
           <span class="badge rounded-pill" id="nichoBadge" style="display: none; background-color: rgba(255, 102, 0, 0.12); color: #ff8c33; border: 1px solid rgba(255, 102, 0, 0.35); font-weight: 600; font-size: 14px;">
             🏷️ <span id="nichoModal"></span>
           </span>
+        </div>
+        <!-- ===== FASE P0 — R-95: ID DO PRODUTO + VER NA SHOPEE ===== -->
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+          <span class="item-id-modal" id="modalItemId" title="Clique para copiar o ID do produto na Shopee">🆔 —</span>
+          <button type="button" class="btn-ver-produto" onclick="abrirProdutoShopee()" title="Abrir o anúncio original na Shopee">
+            🔗 Ver Produto na Shopee
+          </button>
+        </div>
+        <!-- ===== FASE P0 — AVISO DO MODAL NEUTRO ===== -->
+        <div class="alerta-gerar" id="alertaGerarMaterial">
+          ✨ Escolha uma plataforma abaixo para gerar o conteúdo com IA (post, prompt, grupos e link).
         </div>
         <div class="row g-3 mb-1">
           <div class="col-md-6">
@@ -988,7 +1579,7 @@ function imagemProdutoFalhou() {
                     🎬 Abrir no Google Flow
                   </button>
                 </div>
-                <small class="hint d-block mt-2">Escolha a plataforma para gerar o prompt com as regras dela (storyboard, produto fiel, formato certo).</small>
+                <small class="hint d-block mt-2">Escolha a plataforma para gerar o prompt com as regras dela (gancho de abertura, produto fiel, formato certo).</small>
               </div>
             </div>
           </div>
@@ -998,10 +1589,13 @@ function imagemProdutoFalhou() {
             <div class="bloco-ia h-100">
               <div class="bloco-ia-titulo"><i class="bi bi-chat-left-text"></i> Post</div>
               <div class="bloco-ia-corpo">
-                <textarea class="form-control form-control-ia" id="copyResultadoModal" rows="4" readonly spellcheck="false" oninput="atualizarContadorLegenda()"></textarea>
+                <textarea class="form-control form-control-ia" id="copyResultadoModal" rows="4" readonly spellcheck="false" oninput="atualizarEstadoLegenda()"></textarea>
                 <div class="d-flex justify-content-between align-items-center mt-1">
                   <small class="hint">Hashtags já incluídas no post.</small>
                   <span class="contador-caracteres" id="contadorLegenda">0 / 2200</span>
+                </div>
+                <div class="aviso-limite-shopee" id="avisoLimiteShopee">
+                  ⚠️ O app da Shopee <strong>corta em "..."</strong> legendas acima de <strong>150 caracteres</strong>. Encurte o texto — senão o CTA (link) fica de fora e você perde a venda.
                 </div>
                 <div class="d-flex justify-content-end mt-2">
                   <button type="button" class="btn btn-sm fw-bold d-inline-flex align-items-center gap-1 btn-copy-solid" id="btnCopiarLegenda" onclick="copiarLegendaComLink(this)">
@@ -1037,9 +1631,6 @@ function imagemProdutoFalhou() {
           <a href="#" onclick="abrirVitrine(); return false;" class="small text-warning text-decoration-none" style="font-size: 12px; white-space: nowrap;">
             🛍️ Abrir minha Vitrine Shopee
           </a>
-          <button type="button" class="btn btn-outline-light btn-sm d-inline-flex align-items-center gap-1" id="btnGerarGemini" onclick="solicitarGemini()">
-            <i class="bi bi-arrow-clockwise"></i> Atualizar
-          </button>
         </div>
         <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Fechar</button>
       </div>
@@ -1049,17 +1640,31 @@ function imagemProdutoFalhou() {
 <!-- Scripts JS Bootstrap -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+/* ============================================================
+   SHAREFY — DASHBOARD (versão limpa)
+   Fluxo: 1 clique na plataforma = material base + prompt + legenda
+   no limite correto + registro da divulgação.
+   ============================================================ */
 let produtoAtual = {};
 let limiteLegendaAtual = 2200;
-function atualizarContadorLegenda() {
-    const texto = document.getElementById('copyResultadoModal').value;
+let modoShopeeVideoAtivo = false;
+
+/* ---------- Estado da legenda (contador + trava 150 + aviso) ---------- */
+function atualizarEstadoLegenda() {
+    const campo = document.getElementById('copyResultadoModal');
     const contador = document.getElementById('contadorLegenda');
-    if (!contador) return;
-    const tamanho = texto.length;
-    contador.textContent = tamanho + ' / ' + limiteLegendaAtual;
+    const aviso = document.getElementById('avisoLimiteShopee');
+    if (!campo || !contador) return;
+
+    const tamanho = campo.value.length;
+    const limite = modoShopeeVideoAtivo ? 150 : limiteLegendaAtual;
+
+    campo.maxLength = limite;
+    contador.textContent = tamanho + ' / ' + limite;
     contador.classList.remove('ok', 'quase', 'estourou');
-    if (limiteLegendaAtual <= 0) return;
-    const proporcao = tamanho / limiteLegendaAtual;
+
+    if (limite <= 0) return;
+    const proporcao = tamanho / limite;
     if (proporcao > 1) {
         contador.classList.add('estourou');
     } else if (proporcao >= 0.85) {
@@ -1067,59 +1672,173 @@ function atualizarContadorLegenda() {
     } else {
         contador.classList.add('ok');
     }
+    if (aviso) {
+        aviso.style.display = (modoShopeeVideoAtivo && tamanho > 150) ? 'block' : 'none';
+    }
 }
+
+/* ---------- Modos de plataforma ---------- */
+function ativarModoShopeeVideo() {
+    modoShopeeVideoAtivo = true;
+    atualizarEstadoLegenda();
+}
+function desativarModoShopeeVideo() {
+    modoShopeeVideoAtivo = false;
+    atualizarEstadoLegenda();
+}
+
+/* ============================================================
+   FLUXO PRINCIPAL — clique na plataforma
+   1) garante material base (post, grupos, link) se ainda não gerado;
+   2) gera prompt da plataforma + legenda no limite dela;
+   3) registra a divulgação.
+   NO SHOPEE: as caixas NÃO mostram o post universal — ficam
+   limpas ("Gerando...") até chegar a legenda curta da plataforma.
+   ============================================================ */
 function gerarPromptPlataforma(plataforma, botao) {
     const botoes = document.querySelectorAll('.btn-plataforma');
     const textoOriginal = botao.innerHTML;
     botoes.forEach(b => { b.disabled = true; });
-    botao.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Gerando...`;
+    botao.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Gerando...';
+
+    /* Ativa/desativa o modo Shopee conforme a plataforma clicada */
+    if (plataforma === 'shopee') {
+        ativarModoShopeeVideo();
+        /* Limpa as caixas NA HORA — nada de texto antigo aparecendo */
+        document.getElementById('copyResultadoModal').value = '';
+        document.getElementById('promptVideoModal').value = '';
+        atualizarEstadoLegenda();
+    } else {
+        desativarModoShopeeVideo();
+    }
+
+    /* Passo 1 — material base (só se o link ainda não foi gerado) */
+    const precisaBase = !document.getElementById('linkAfiliadoModal').value;
+    const promessaBase = precisaBase ? solicitarGeminiBase(plataforma) : Promise.resolve(true);
+
+    promessaBase.then(ok => {
+        if (!ok) {
+            botoes.forEach(b => { b.disabled = false; });
+            botao.innerHTML = textoOriginal;
+            return;
+        }
+        /* Passo 2 — prompt da plataforma + legenda no limite certo */
+        const formData = new FormData();
+        formData.append('nome', produtoAtual.titulo);
+        formData.append('nicho', '');
+        formData.append('plataforma', plataforma);
+        formData.append('item_id', produtoAtual.item_id || '');
+        formData.append('copy', document.getElementById('copyResultadoModal').value || '');
+
+        fetch('/api/gerar-prompt-shopee/', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': getCookie('csrftoken') },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            botoes.forEach(b => { b.disabled = false; });
+            botao.innerHTML = textoOriginal;
+            if (data.status === 'sucesso') {
+                botoes.forEach(b => b.classList.remove('ativo'));
+                botao.classList.add('ativo');
+                document.getElementById('promptVideoModal').value = data.prompt_shopee || '';
+                if (data.legenda_plataforma) {
+                    limiteLegendaAtual = data.limite_legenda || 2200;
+                    document.getElementById('copyResultadoModal').value = data.legenda_plataforma;
+                    atualizarEstadoLegenda();
+                }
+                /* Passo 3 — registra a divulgação (R-95) */
+                registrarDivulgacao(plataforma);
+            } else {
+                alert('Erro ao gerar prompt: ' + (data.mensagem || 'Tente novamente.'));
+            }
+        })
+        .catch(() => {
+            botoes.forEach(b => { b.disabled = false; });
+            botao.innerHTML = textoOriginal;
+            alert('Erro de conexão ao gerar prompt. Tente novamente.');
+        });
+    });
+}
+
+/* ============================================================
+   MATERIAL BASE (post, grupos, link) — retorna Promise.
+   No SHOPEE o post universal NÃO preenche a caixa (a legenda
+   curta chega no passo 2, da própria plataforma).
+   ============================================================ */
+function solicitarGeminiBase(plataforma) {
     const formData = new FormData();
+    formData.append('item_id', produtoAtual.item_id);
     formData.append('nome', produtoAtual.titulo);
-    formData.append('nicho', '');
-    formData.append('plataforma', plataforma);
-    /* envia item_id e copy para o backend usar o cache da sessão
-       e NÃO chamar o Gemini uma segunda vez (resposta muito mais rápida) */
-    formData.append('item_id', produtoAtual.item_id || '');
-    formData.append('copy', document.getElementById('copyResultadoModal').value || '');
-    fetch('/api/gerar-prompt-shopee/', {
+    formData.append('link_original', produtoAtual.link);
+    formData.append('imagem_url', produtoAtual.imagem);
+    formData.append('nicho', '{{ query_atual|escapejs }}');
+    formData.append('preco', produtoAtual.preco || '0,00');
+    formData.append('comissao', produtoAtual.comissao || '0,00');
+    formData.append('vendas', produtoAtual.vendas || '0');
+    formData.append('loja', produtoAtual.loja || '');
+
+    return fetch('/api/salvar-preparar/', {
         method: 'POST',
         headers: { 'X-CSRFToken': getCookie('csrftoken') },
         body: formData
     })
     .then(response => response.json())
     .then(data => {
-        botoes.forEach(b => { b.disabled = false; });
-        botao.innerHTML = textoOriginal;
         if (data.status === 'sucesso') {
-            botoes.forEach(b => b.classList.remove('ativo'));
-            botao.classList.add('ativo');
-            document.getElementById('promptVideoModal').value = data.prompt_shopee || '';
-            if (data.legenda_plataforma) {
-                limiteLegendaAtual = data.limite_legenda || 2200;
-                document.getElementById('copyResultadoModal').value = data.legenda_plataforma;
-                atualizarContadorLegenda();
+            document.getElementById('alertaGerarMaterial').style.display = 'none';
+            if (data.nicho_detectado) {
+                document.getElementById('nichoModal').textContent = data.nicho_detectado;
+                document.getElementById('nichoBadge').style.display = 'inline-flex';
             }
+            /* P2-3: só preenche o post universal fora do modo Shopee */
+            if (plataforma !== 'shopee') {
+                document.getElementById('copyResultadoModal').value = data.copy_vendas || '';
+                document.getElementById('promptVideoModal').value = data.prompt_ia || '';
+            }
+            if (data.link_afiliado) {
+                produtoAtual.link = data.link_afiliado;
+                document.getElementById('linkAfiliadoModal').value = data.link_afiliado;
+            }
+            if (data.imagem_url) {
+                produtoAtual.imagem = data.imagem_url;
+                exibirImagemProduto(data.imagem_url);
+            }
+            atualizarEstadoLegenda();
+            const ul = document.getElementById('gruposModal');
+            ul.innerHTML = '';
+            (data.grupos_sugeridos || []).forEach(g => {
+                const li = document.createElement('li');
+                li.style.marginBottom = '6px';
+                const a = document.createElement('a');
+                a.href = g.link_grupo || '#';
+                a.target = '_blank';
+                a.rel = 'noopener';
+                a.title = 'Buscar no Facebook: ' + (g.nome || '');
+                a.className = 'grupo-link';
+                a.textContent = '👥 ' + (g.nome || '') + ' ↗';
+                li.appendChild(a);
+                ul.appendChild(li);
+            });
+            return true;
         } else {
-            alert('Erro ao gerar prompt: ' + (data.mensagem || 'Tente novamente.'));
+            alert('Erro ao consultar a IA Gemini: ' + (data.mensagem || 'Tente novamente.'));
+            return false;
         }
     })
-    .catch(() => {
-        botoes.forEach(b => { b.disabled = false; });
-        botao.innerHTML = textoOriginal;
-        alert('Erro de conexão ao gerar prompt. Tente novamente.');
+    .catch(error => {
+        console.error('Erro na requisição Gemini:', error);
+        alert('Erro de conexão ao gerar conteúdo. Tente novamente.');
+        return false;
     });
 }
-function copiarPromptVideo(botao) {
-    const prompt = document.getElementById('promptVideoModal').value;
-    if (copiarTextoConfiavel(prompt)) {
-        if (botao) mostrarCopiado(botao, `<i class="bi bi-clipboard"></i> Copiar prompt`);
-    } else {
-        alert('Não foi possível copiar. Selecione o texto e copie com Ctrl+C.');
-    }
-}
+
+/* ---------- Imagem do produto ---------- */
 function exibirImagemProduto(url) {
     const img = document.getElementById('imagemProdutoModal');
     const placeholder = document.getElementById('imagemProdutoPlaceholder');
+    if (!img || !placeholder) return;
     if (url && url.trim() !== '') {
         img.src = url;
         img.style.display = 'block';
@@ -1132,104 +1851,14 @@ function exibirImagemProduto(url) {
 function imagemProdutoFalhou() {
     const img = document.getElementById('imagemProdutoModal');
     const placeholder = document.getElementById('imagemProdutoPlaceholder');
+    if (!img || !placeholder) return;
     img.style.display = 'none';
     placeholder.style.display = 'block';
 }
-document.addEventListener('DOMContentLoaded', function () {
-    const botoesModal = document.querySelectorAll('.btn-abrir-modal');
-    botoesModal.forEach(botao => {
-        botao.addEventListener('click', function () {
-            produtoAtual = {
-                item_id: this.getAttribute('data-item-id') || '',
-                titulo: this.getAttribute('data-titulo') || '',
-                preco: this.getAttribute('data-preco') || '0,00',
-                comissao: this.getAttribute('data-comissao') || '0,00',
-                vendas: this.getAttribute('data-vendas') || '0',
-                imagem: this.getAttribute('data-imagem') || '',
-                link: this.getAttribute('data-link') || ''
-            };
-            document.getElementById('modalProdutoTitulo').textContent = produtoAtual.titulo;
-            document.getElementById('modalProdutoPreco').textContent = 'R$ ' + produtoAtual.preco;
-            document.getElementById('copyResultadoModal').value = '';
-            document.getElementById('promptVideoModal').value = '';
-            document.getElementById('linkAfiliadoModal').value = '';
-            document.getElementById('nichoModal').textContent = '';
-            document.getElementById('nichoBadge').style.display = 'none';
-            document.getElementById('gruposModal').innerHTML = '';
-            document.querySelectorAll('.btn-plataforma').forEach(b => b.classList.remove('ativo'));
-            limiteLegendaAtual = 2200;
-            atualizarContadorLegenda();
-            exibirImagemProduto(produtoAtual.imagem);
-            solicitarGemini();
-        });
-    });
-});
-function solicitarGemini() {
-    const btn = document.getElementById('btnGerarGemini');
-    btn.disabled = true;
-    btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Gerando...`;
-    const formData = new FormData();
-    formData.append('item_id', produtoAtual.item_id);
-    formData.append('nome', produtoAtual.titulo);
-    formData.append('link_original', produtoAtual.link);
-    formData.append('imagem_url', produtoAtual.imagem);
-    formData.append('nicho', '{{ query_atual|escapejs }}');
-    /* Campos numéricos — o backend salva preço, comissão e vendas no banco */
-    formData.append('preco', produtoAtual.preco || '0,00');
-    formData.append('comissao', produtoAtual.comissao || '0,00');
-    formData.append('vendas', produtoAtual.vendas || '0');
-    fetch('/api/salvar-preparar/', {
-        method: 'POST',
-        headers: { 'X-CSRFToken': getCookie('csrftoken') },
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        btn.disabled = false;
-        btn.innerHTML = `<i class="bi bi-arrow-clockwise"></i> Atualizar`;
-        if (data.status === 'sucesso') {
-            if (data.nicho_detectado) {
-                document.getElementById('nichoModal').textContent = data.nicho_detectado;
-                document.getElementById('nichoBadge').style.display = 'inline-flex';
-            }
-            document.getElementById('copyResultadoModal').value = data.copy_vendas || '';
-            document.getElementById('promptVideoModal').value = data.prompt_ia || '';
-            if (data.link_afiliado) {
-                produtoAtual.link = data.link_afiliado;
-                document.getElementById('linkAfiliadoModal').value = data.link_afiliado;
-            }
-            if (data.imagem_url) {
-                produtoAtual.imagem = data.imagem_url;
-                exibirImagemProduto(data.imagem_url);
-            }
-            atualizarContadorLegenda();
-            const ul = document.getElementById('gruposModal');
-            ul.innerHTML = '';
-            (data.grupos_sugeridos || []).forEach(g => {
-                const li = document.createElement('li');
-                li.style.marginBottom = '6px';
-                const a = document.createElement('a');
-                a.href = g.link_grupo || '#';
-                a.target = '_blank';
-                a.rel = 'noopener';
-                a.title = 'Buscar no Facebook: ' + (g.nome || '');
-                a.className = 'grupo-link';
-                a.textContent = `👥 ${g.nome} ↗`;
-                li.appendChild(a);
-                ul.appendChild(li);
-            });
-        } else {
-            alert('Erro ao consultar a IA Gemini: ' + (data.mensagem || 'Tente novamente.'));
-        }
-    })
-    .catch(error => {
-        btn.disabled = false;
-        btn.innerHTML = `<i class="bi bi-arrow-clockwise"></i> Atualizar`;
-        console.error('Erro na requisição Gemini:', error);
-        alert('Erro de conexão ao gerar conteúdo. Tente novamente.');
-    });
-}
+
+/* ---------- Copiar textos (com fallback) ---------- */
 function copiarTextoConfiavel(texto) {
+    if (!texto) return false;
     if (navigator.clipboard && window.isSecureContext) {
         try {
             navigator.clipboard.writeText(texto);
@@ -1258,30 +1887,27 @@ function copiarTextoConfiavel(texto) {
 function mostrarCopiado(botao, textoOriginal) {
     if (!botao) return;
     botao.classList.add('btn-copiado');
-    botao.innerHTML = `✓ Copiado!`;
+    botao.innerHTML = '✓ Copiado!';
     setTimeout(() => {
         botao.classList.remove('btn-copiado');
         botao.innerHTML = textoOriginal;
     }, 2000);
 }
-function atualizarProdutos() {
-    const btn = document.getElementById('btnAtualizar');
-    btn.disabled = true;
-    btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Atualizando...`;
-    const url = new URL(window.location.href);
-    url.searchParams.set('page', '1');
-    url.searchParams.set('refresh', String(Date.now()));
-    window.location.href = url.toString();
-}
-function abrirGoogleFlow() {
-    window.open('https://labs.google/fx/pt/tools/flow/project/280e0a1c-3bdd-4050-aa40-af2dfdcce5cb', '_blank');
+function copiarPromptVideo(botao) {
+    const prompt = document.getElementById('promptVideoModal').value;
+    if (copiarTextoConfiavel(prompt)) {
+        if (botao) mostrarCopiado(botao, '<i class="bi bi-clipboard"></i> Copiar prompt');
+    } else {
+        alert('Não foi possível copiar. Selecione o texto e copie com Ctrl+C.');
+    }
 }
 function copiarLegendaComLink(botao) {
     const legenda = document.getElementById('copyResultadoModal').value;
     const link = document.getElementById('linkAfiliadoModal').value;
-    const texto = legenda + (link ? '\n\n🛒 Link: ' + link : '');
+    /* No modo Shopee copia SÓ a legenda (sem link); nos demais, legenda + link */
+    const texto = modoShopeeVideoAtivo ? legenda : (legenda + (link ? '\n\n🛒 Link: ' + link : ''));
     if (copiarTextoConfiavel(texto)) {
-        if (botao) mostrarCopiado(botao, `<i class="bi bi-clipboard"></i> Copiar legenda + link`);
+        if (botao) mostrarCopiado(botao, '<i class="bi bi-clipboard"></i> Copiar legenda + link');
     } else {
         alert('Não foi possível copiar. Selecione o texto e copie com Ctrl+C.');
     }
@@ -1289,13 +1915,25 @@ function copiarLegendaComLink(botao) {
 function copiarLinkAfiliado(botao) {
     const link = document.getElementById('linkAfiliadoModal').value;
     if (copiarTextoConfiavel(link)) {
-        if (botao) mostrarCopiado(botao, `Copiar`);
+        if (botao) mostrarCopiado(botao, 'Copiar');
     } else {
         alert('Não foi possível copiar. Selecione o link e copie com Ctrl+C.');
     }
 }
+
+/* ---------- Links externos ---------- */
+function abrirGoogleFlow() {
+    window.open('https://labs.google/fx/pt/tools/flow/project/280e0a1c-3bdd-4050-aa40-af2dfdcce5cb', '_blank');
+}
 function abrirVitrine() {
     window.open('https://collshp.com/acheieindico_br669?view=storefront', '_blank');
+}
+function abrirProdutoShopee() {
+    if (produtoAtual.link && produtoAtual.link.trim() !== '') {
+        window.open(produtoAtual.link, '_blank', 'noopener');
+    } else {
+        alert('Este produto não possui link da Shopee disponível.');
+    }
 }
 function getCookie(name) {
     let cookieValue = null;
@@ -1311,14 +1949,79 @@ function getCookie(name) {
     }
     return cookieValue;
 }
-function atualizarContadorPosts(quantidade) {
-    const contador = document.getElementById('contadorPosts');
-    const meta = parseInt(contador.getAttribute('data-meta') || '5', 10);
-    document.getElementById('postsHojeValor').textContent = quantidade + '/' + meta;
-    const pct = Math.min(100, Math.round((quantidade / meta) * 100));
-    document.getElementById('postsHojeBarra').style.width = pct + '%';
+
+/* ---------- Atualizar produtos / quantidade ---------- */
+function atualizarProdutos() {
+    const btn = document.getElementById('btnAtualizar');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Atualizando...';
+    const url = new URL(window.location.href);
+    url.searchParams.set('page', '1');
+    url.searchParams.set('refresh', String(Date.now()));
+    window.location.href = url.toString();
 }
+function mudarQuantidade() {
+    const select = document.getElementById('qtdProdutosSelect');
+    const qtd = select.value;
+    const url = new URL(window.location.href);
+    url.searchParams.set('total', qtd);
+    url.searchParams.set('page', '1');
+    window.location.href = url.toString();
+}
+
+/* ---------- Registrar divulgação (R-95) ---------- */
+function registrarDivulgacao(plataforma) {
+    if (!produtoAtual.item_id) return;
+    const formData = new FormData();
+    formData.append('item_id', produtoAtual.item_id);
+    formData.append('nome', produtoAtual.titulo);
+    formData.append('imagem_url', produtoAtual.imagem);
+    formData.append('link_original', produtoAtual.link);
+    formData.append('link_afiliado', document.getElementById('linkAfiliadoModal').value || produtoAtual.link);
+    formData.append('plataforma', plataforma || 'shopee');
+    formData.append('prompt', document.getElementById('promptVideoModal').value || '');
+    formData.append('legenda', document.getElementById('copyResultadoModal').value || '');
+    fetch('/api/registrar-divulgacao/', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCookie('csrftoken') },
+        body: formData
+    }).catch(() => {});
+}
+
+/* ---------- Inicialização ---------- */
 document.addEventListener('DOMContentLoaded', function () {
+    /* Abre o modal com os dados do produto */
+    document.querySelectorAll('.btn-abrir-modal').forEach(botao => {
+        botao.addEventListener('click', function () {
+            produtoAtual = {
+                item_id: this.getAttribute('data-item-id') || '',
+                titulo: this.getAttribute('data-titulo') || '',
+                preco: this.getAttribute('data-preco') || '0,00',
+                comissao: this.getAttribute('data-comissao') || '0,00',
+                vendas: this.getAttribute('data-vendas') || '0',
+                imagem: this.getAttribute('data-imagem') || '',
+                link: this.getAttribute('data-link') || '',
+                loja: this.getAttribute('data-loja') || '',
+            };
+            document.getElementById('modalProdutoTitulo').textContent = produtoAtual.titulo;
+            document.getElementById('modalProdutoPreco').textContent = 'R$ ' + produtoAtual.preco;
+            document.getElementById('modalItemId').textContent = '🆔 ' + produtoAtual.item_id;
+            document.getElementById('copyResultadoModal').value = '';
+            document.getElementById('promptVideoModal').value = '';
+            document.getElementById('linkAfiliadoModal').value = '';
+            document.getElementById('nichoModal').textContent = '';
+            document.getElementById('nichoBadge').style.display = 'none';
+            document.getElementById('gruposModal').innerHTML = '';
+            document.querySelectorAll('.btn-plataforma').forEach(b => b.classList.remove('ativo'));
+            modoShopeeVideoAtivo = false;
+            limiteLegendaAtual = 2200;
+            atualizarEstadoLegenda();
+            exibirImagemProduto(produtoAtual.imagem);
+            document.getElementById('alertaGerarMaterial').style.display = 'flex';
+        });
+    });
+
+    /* Marca "Já postei" (P1-5) */
     document.querySelectorAll('.btn-marcar').forEach(botao => {
         botao.addEventListener('click', function () {
             const itemId = this.getAttribute('data-item-id');
@@ -1341,7 +2044,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     botao.classList.add('btn-postado');
                     botao.disabled = true;
                     botao.innerHTML = '✅ Postado hoje';
-                    atualizarContadorPosts(data.quantidade_posts_hoje);
                 } else {
                     botao.disabled = false;
                     botao.innerHTML = '📌 Já postei';
@@ -1355,58 +2057,314 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
     });
+
+    /* Contador inicial */
+    atualizarEstadoLegenda();
 });
-function salvarMeta() {
-    const input = document.getElementById('metaDiariaInput');
-    const btn = document.getElementById('btnSalvarMeta');
-    let meta = parseInt(input.value, 10);
-    if (isNaN(meta) || meta < 1) meta = 1;
-    if (meta > 50) meta = 50;
-    input.value = meta;
-    btn.disabled = true;
-    btn.textContent = 'Salvando...';
-    const formData = new FormData();
-    formData.append('meta', meta);
-    fetch('/api/definir-meta/', {
-        method: 'POST',
-        headers: { 'X-CSRFToken': getCookie('csrftoken') },
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        btn.disabled = false;
-        btn.textContent = 'Salvar';
-        if (data.status === 'sucesso') {
-            const contador = document.getElementById('contadorPosts');
-            contador.setAttribute('data-meta', data.meta_diaria);
-            const textoAtual = document.getElementById('postsHojeValor').textContent;
-            const quantidadeAtual = parseInt(textoAtual.split('/')[0], 10) || 0;
-            atualizarContadorPosts(quantidadeAtual);
-        } else {
-            alert('Erro ao salvar meta: ' + (data.mensagem || 'Tente novamente.'));
-        }
-    })
-    .catch(() => {
-        btn.disabled = false;
-        btn.textContent = 'Salvar';
-        alert('Erro de conexão ao salvar a meta. Tente novamente.');
+
+/* Recalcula o contador sempre que o modal abrir (mesmo com texto pronto) */
+document.addEventListener('shown.bs.modal', function (evento) {
+    if (evento.target && evento.target.id === 'modalGeradorIA') {
+        atualizarEstadoLegenda();
+    }
+});
+</script>
+<script>
+/* ============================================================
+   GERAÇÃO EM LOTE — TOP 5 (Fase Inteligência)
+   Reutiliza os endpoints existentes (/api/salvar-preparar/ e
+   /api/gerar-prompt-shopee/) — zero mudança no backend.
+   ============================================================ */
+function lerProdutosTop5() {
+    const produtos = [];
+    document.querySelectorAll('.top5-section .btn-abrir-modal').forEach(botao => {
+        produtos.push({
+            item_id: botao.getAttribute('data-item-id') || '',
+            titulo: botao.getAttribute('data-titulo') || '',
+            preco: botao.getAttribute('data-preco') || '0,00',
+            comissao: botao.getAttribute('data-comissao') || '0,00',
+            vendas: botao.getAttribute('data-vendas') || '0',
+            imagem: botao.getAttribute('data-imagem') || '',
+            link: botao.getAttribute('data-link') || '',
+            loja: botao.getAttribute('data-loja') || '',
+        });
     });
+    return produtos;
 }
-document.addEventListener('DOMContentLoaded', function () {
-    document.getElementById('metaDiariaInput').addEventListener('keydown', function (e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            salvarMeta();
-        }
+
+function loteFormDataBase(produto) {
+    const formData = new FormData();
+    formData.append('item_id', produto.item_id);
+    formData.append('nome', produto.titulo);
+    formData.append('link_original', produto.link);
+    formData.append('imagem_url', produto.imagem);
+    formData.append('nicho', '');
+    formData.append('preco', produto.preco || '0,00');
+    formData.append('comissao', produto.comissao || '0,00');
+    formData.append('vendas', produto.vendas || '0');
+    formData.append('loja', produto.loja || '');
+    return formData;
+}
+
+function loteCriarCardResultado(produto, indice) {
+    const div = document.createElement('div');
+    div.className = 'lote-item';
+    div.innerHTML =
+        '<div class="lote-item-head">' +
+        '  <span class="lote-numero">#' + indice + '</span>' +
+        '  <span class="lote-titulo" title="' + produto.titulo + '">' + produto.titulo + '</span>' +
+        '  <span class="lote-estado" id="loteEstado' + indice + '">⏳ Gerando...</span>' +
+        '</div>' +
+        '<div class="lote-item-body" id="loteBody' + indice + '" style="display:none;">' +
+        '  <div class="mb-2">' +
+        '    <label class="lote-label">Legenda (Shopee Vídeo):</label>' +
+        '    <textarea class="form-control lote-textarea" id="loteLegenda' + indice + '" rows="2" readonly></textarea>' +
+        '  </div>' +
+        '  <div class="mb-2">' +
+        '    <label class="lote-label">Prompt do vídeo (com storyboard):</label>' +
+        '    <textarea class="form-control lote-textarea" id="lotePrompt' + indice + '" rows="3" readonly></textarea>' +
+        '  </div>' +
+        '  <div class="mb-2">' +
+        '    <label class="lote-label">Link de afiliado:</label>' +
+        '    <input type="text" class="form-control lote-textarea" id="loteLink' + indice + '" readonly>' +
+        '  </div>' +
+        '  <button type="button" class="btn btn-sm btn-outline-light" onclick="loteCopiar(this,' + indice + ')">📋 Copiar tudo</button>' +
+        '</div>';
+    return div;
+}
+
+function loteCopiar(botao, indice) {
+    const legenda = document.getElementById('loteLegenda' + indice).value;
+    const prompt = document.getElementById('lotePrompt' + indice).value;
+    const link = document.getElementById('loteLink' + indice).value;
+    const texto = '📝 Legenda:\n' + legenda + '\n\n🎬 Prompt:\n' + prompt + '\n\n🛒 Link: ' + link;
+    if (copiarTextoConfiavel(texto)) {
+        botao.innerHTML = '✓ Copiado!';
+        setTimeout(() => { botao.innerHTML = '📋 Copiar tudo'; }, 2000);
+    } else {
+        alert('Não foi possível copiar. Selecione o texto e copie com Ctrl+C.');
+    }
+}
+
+async function gerarMaterialTop5() {
+    const btn = document.getElementById('btnGerarTop5');
+    const painel = document.getElementById('painelLoteTop5');
+    const status = document.getElementById('loteStatus');
+    const fila = document.getElementById('loteFila');
+    const produtos = lerProdutosTop5();
+    if (produtos.length === 0) {
+        alert('Nenhum produto no Top 5 para gerar material.');
+        return;
+    }
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Gerando...';
+    painel.style.display = 'block';
+    fila.innerHTML = '';
+    produtos.forEach((produto, i) => {
+        fila.appendChild(loteCriarCardResultado(produto, i + 1));
     });
+    for (let i = 0; i < produtos.length; i++) {
+        const produto = produtos[i];
+        const num = i + 1;
+        status.textContent = 'Produto ' + num + ' de ' + produtos.length;
+        const estado = document.getElementById('loteEstado' + num);
+        try {
+            /* Passo 1 — material base (copy, link, grupos) */
+            const base = await fetch('/api/salvar-preparar/', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                body: loteFormDataBase(produto)
+            }).then(r => r.json());
+            if (base.status !== 'sucesso') {
+                estado.textContent = '❌ Erro no material base';
+                continue;
+            }
+            /* Passo 2 — prompt Shopee + legenda curta (com storyboard) */
+            const formData = new FormData();
+            formData.append('nome', produto.titulo);
+            formData.append('nicho', '');
+            formData.append('plataforma', 'shopee');
+            formData.append('item_id', produto.item_id || '');
+            formData.append('copy', base.copy_vendas || '');
+            const promptData = await fetch('/api/gerar-prompt-shopee/', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                body: formData
+            }).then(r => r.json());
+            if (promptData.status === 'sucesso') {
+                document.getElementById('loteLegenda' + num).value = promptData.legenda_plataforma || base.copy_vendas || '';
+                document.getElementById('lotePrompt' + num).value = promptData.prompt_shopee || '';
+                document.getElementById('loteLink' + num).value = base.link_afiliado || produto.link || '';
+                document.getElementById('loteBody' + num).style.display = 'block';
+                estado.textContent = '✅ Pronto';
+            } else {
+                estado.textContent = '❌ Erro no prompt';
+            }
+        } catch (e) {
+            estado.textContent = '❌ Erro de conexão';
+        }
+    }
+    status.textContent = 'Concluído!';
+    btn.disabled = false;
+    btn.innerHTML = '✨ Gerar material dos Top 5';
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    const btn = document.getElementById('btnGerarTop5');
+    if (btn) {
+        btn.addEventListener('click', gerarMaterialTop5);
+    }
 });
-function mudarQuantidade() {
-    const select = document.getElementById('qtdProdutosSelect');
-    const qtd = select.value;
-    const url = new URL(window.location.href);
-    url.searchParams.set('total', qtd);
-    url.searchParams.set('page', '1');
-    window.location.href = url.toString();
+</script>
+<script>
+/* ============================================================
+   COPILOTO DO DIA — Produto do dia (Fase Inteligência)
+   Reutiliza /api/salvar-preparar/ e /api/gerar-prompt-shopee/.
+   ============================================================ */
+function lerProdutoDoDia() {
+    const botao = document.getElementById('btnCopilotoDia');
+    if (!botao) return null;
+    return {
+        item_id: botao.getAttribute('data-item-id') || '',
+        titulo: botao.getAttribute('data-titulo') || '',
+        preco: botao.getAttribute('data-preco') || '0,00',
+        comissao: botao.getAttribute('data-comissao') || '0,00',
+        vendas: botao.getAttribute('data-vendas') || '0',
+        imagem: botao.getAttribute('data-imagem') || '',
+        link: botao.getAttribute('data-link') || '',
+        loja: botao.getAttribute('data-loja') || '',
+    };
+}
+
+async function gerarMaterialProdutoDia() {
+    const btn = document.getElementById('btnCopilotoDia');
+    const painel = document.getElementById('copilotoPainel');
+    const status = document.getElementById('copilotoStatus');
+    const produto = lerProdutoDoDia();
+    if (!produto) { alert('Produto do dia não encontrado.'); return; }
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Gerando...';
+    painel.style.display = 'block';
+    status.textContent = 'Gerando material do produto do dia...';
+    try {
+        const base = await fetch('/api/salvar-preparar/', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': getCookie('csrftoken') },
+            body: loteFormDataBase(produto)
+        }).then(r => r.json());
+        if (base.status !== 'sucesso') {
+            status.textContent = '❌ Erro no material base';
+            btn.disabled = false; btn.innerHTML = '🤖 Gerar material do dia';
+            return;
+        }
+        const formData = new FormData();
+        formData.append('nome', produto.titulo);
+        formData.append('nicho', '');
+        formData.append('plataforma', 'shopee');
+        formData.append('item_id', produto.item_id || '');
+        formData.append('copy', base.copy_vendas || '');
+        const promptData = await fetch('/api/gerar-prompt-shopee/', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': getCookie('csrftoken') },
+            body: formData
+        }).then(r => r.json());
+        if (promptData.status === 'sucesso') {
+            document.getElementById('copilotoLegenda').value = promptData.legenda_plataforma || base.copy_vendas || '';
+            document.getElementById('copilotoPrompt').value = promptData.prompt_shopee || '';
+            document.getElementById('copilotoLink').value = base.link_afiliado || produto.link || '';
+            status.textContent = '✅ Material pronto!';
+        } else {
+            status.textContent = '❌ Erro no prompt';
+        }
+    } catch (e) {
+        status.textContent = '❌ Erro de conexão';
+    }
+    btn.disabled = false;
+    btn.innerHTML = '🤖 Gerar material do dia';
+}
+
+function copilotoCopiar() {
+    const legenda = document.getElementById('copilotoLegenda').value;
+    const prompt = document.getElementById('copilotoPrompt').value;
+    const link = document.getElementById('copilotoLink').value;
+    const texto = '📝 Legenda:\n' + legenda + '\n\n🎬 Prompt:\n' + prompt + '\n\n🛒 Link: ' + link;
+    const btn = document.getElementById('btnCopilotoCopiar');
+    if (copiarTextoConfiavel(texto)) {
+        btn.innerHTML = '✓ Copiado!';
+        setTimeout(() => { btn.innerHTML = '📋 Copiar tudo'; }, 2000);
+    } else {
+        alert('Não foi possível copiar. Selecione o texto e copie com Ctrl+C.');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    const btn = document.getElementById('btnCopilotoDia');
+    if (btn) btn.addEventListener('click', gerarMaterialProdutoDia);
+});
+</script>
+<script>
+/* ============================================================
+   VARIAÇÕES A/B DE LEGENDA (Fase Inteligência)
+   Usa /api/gerar-prompt-shopee/ com plataforma='shopee',
+   que devolve o campo 'legendas' (v1, v2, v3).
+   ============================================================ */
+function abCopiar(botao) {
+    const texto = botao.parentElement.querySelector('textarea').value;
+    if (copiarTextoConfiavel(texto)) {
+        botao.innerHTML = '✓ Copiado!';
+        setTimeout(() => { botao.innerHTML = '📋 Copiar'; }, 2000);
+    } else {
+        alert('Não foi possível copiar. Selecione o texto e copie com Ctrl+C.');
+    }
+}
+
+async function gerarVariacoesAB() {
+    const btn = document.getElementById('btnCopilotoDia');
+    const area = document.getElementById('copilotoAB');
+    if (!btn || !area) return;
+    const itemId = btn.getAttribute('data-item-id') || '';
+    const titulo = btn.getAttribute('data-titulo') || '';
+    const preco = btn.getAttribute('data-preco') || '0,00';
+    if (!itemId) { alert('Produto do dia não encontrado.'); return; }
+    area.style.display = 'block';
+    area.innerHTML = '<span class="lote-status">Gerando 3 variações de legenda...</span>';
+    try {
+        const formData = new FormData();
+        formData.append('nome', titulo);
+        formData.append('nicho', '');
+        formData.append('plataforma', 'shopee');
+        formData.append('preco', preco);
+        formData.append('item_id', itemId);
+        const resp = await fetch('/api/gerar-prompt-shopee/', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': getCookie('csrftoken') },
+            body: formData
+        }).then(r => r.json());
+        if (resp.status === 'sucesso' && resp.legendas) {
+            const estilos = [
+                ['V1 — Gancho direto', resp.legendas.v1],
+                ['V2 — Storytelling', resp.legendas.v2],
+                ['V3 — Pergunta + CTA', resp.legendas.v3]
+            ];
+            area.innerHTML = '';
+            estilos.forEach(function (item, i) {
+                const div = document.createElement('div');
+                div.className = 'lote-item';
+                div.innerHTML =
+                    '<div class="lote-item-head">' +
+                    '  <span class="lote-numero">' + (i + 1) + '</span>' +
+                    '  <span class="lote-titulo">' + item[0] + '</span>' +
+                    '</div>' +
+                    '<textarea class="form-control lote-textarea mb-2" rows="2" readonly>' + item[1] + '</textarea>' +
+                    '<button type="button" class="btn btn-sm btn-outline-light" onclick="abCopiar(this)">📋 Copiar</button>';
+                area.appendChild(div);
+            });
+        } else {
+            area.innerHTML = '<span class="lote-status">❌ Erro: ' + (resp.mensagem || resp.erro || 'resposta inválida') + '</span>';
+        }
+    } catch (e) {
+        area.innerHTML = '<span class="lote-status">❌ Erro de conexão</span>';
+    }
 }
 </script>
 </body>

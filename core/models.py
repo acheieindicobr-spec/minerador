@@ -5,6 +5,7 @@ class ProdutoValidado(models.Model):
     nome = models.CharField(max_length=255, verbose_name="Nome do produto")
     nicho = models.CharField(max_length=100, blank=True, default='', db_index=True, verbose_name="Nicho")
     categoria = models.CharField(max_length=100, blank=True, default='', db_index=True, verbose_name="Categoria")
+    loja = models.CharField(max_length=150, blank=True, default='', db_index=True, verbose_name="Loja vendedora")
     imagem_url = models.URLField(max_length=500, blank=True, verbose_name="URL da imagem")
     link_original = models.URLField(max_length=500, blank=True, verbose_name="Link original")
     link_afiliado = models.URLField(max_length=500, blank=True, verbose_name="Link de afiliado")
@@ -93,3 +94,66 @@ class SnapshotVendas(models.Model):
         indexes = [
             models.Index(fields=['item_id', 'capturado_em'], name='idx_snap_item_data'),
         ]
+
+# ============================================================
+# DIVULGAÇÃO — histórico de cada material gerado (R-95)
+# Resolve a dor: "nunca acho o produto na Shopee depois"
+# Cada vez que você gerar/copiar um prompt, fica registrado
+# aqui com o item_id e o link original para voltar ao anúncio.
+# ============================================================
+class Divulgacao(models.Model):
+    item_id = models.CharField(max_length=100, db_index=True, verbose_name="ID do item na Shopee")
+    nome = models.CharField(max_length=255, verbose_name="Nome do produto")
+    imagem_url = models.URLField(max_length=500, blank=True, verbose_name="URL da imagem")
+    link_original = models.URLField(max_length=500, blank=True, verbose_name="Link da oferta na Shopee")
+    link_afiliado = models.URLField(max_length=500, blank=True, verbose_name="Link de afiliado")
+    plataforma = models.CharField(max_length=30, default='shopee', verbose_name="Plataforma do material")
+    prompt = models.TextField(blank=True, default='', verbose_name="Prompt gerado")
+    legenda = models.TextField(blank=True, default='', verbose_name="Legenda gerada")
+    criado_em = models.DateTimeField(auto_now_add=True, verbose_name="Criado em")
+
+    class Meta:
+        verbose_name = "Divulgação"
+        verbose_name_plural = "Divulgações"
+        ordering = ['-criado_em']
+        indexes = [
+            models.Index(fields=['item_id', 'criado_em'], name='idx_divulg_item_data'),
+        ]
+
+    def __str__(self):
+        return f"{self.nome} - {self.criado_em.strftime('%d/%m/%Y %H:%M')}"
+
+# ============================================================
+# LOJA DE ALTA COMISSÃO — base das 20 lojas (R-85/R-86)
+# Lojas oficiais XTRA COMMISSION + lojas bônus que pagam acima
+# do padrão. Usada para exibir o selo "Loja XTRA COMMISSION"
+# e priorizar o ranqueamento.
+# ============================================================
+class LojaAltaComissao(models.Model):
+    TIPO_CHOICES = [
+        ('xtra', 'XTRA COMMISSION'),
+        ('bonus', 'Bônus'),
+    ]
+    nome = models.CharField(max_length=150, unique=True, verbose_name="Nome da loja")
+    comissao_maxima = models.DecimalField(max_digits=5, decimal_places=2, verbose_name="Comissão máxima (%)")
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default='xtra', verbose_name="Tipo")
+    link_loja = models.URLField(max_length=500, blank=True, verbose_name="Link da loja")
+    criado_em = models.DateTimeField(auto_now_add=True, verbose_name="Criado em")
+
+    class Meta:
+        verbose_name = "Loja de alta comissão"
+        verbose_name_plural = "Lojas de alta comissão"
+        ordering = ['-comissao_maxima']
+        indexes = [
+            models.Index(fields=['tipo'], name='idx_loja_tipo'),
+        ]
+
+    def __str__(self):
+        return f"{self.nome} (até {self.comissao_maxima}%)"
+    # ============================================================
+# ALIAS DE COMPATIBILIDADE
+# Seu views.py (linha 1113) usa o nome "Produto".
+# Esta linha faz "Produto" apontar para a MESMA tabela de
+# "ProdutoValidado" — sem criar migração e sem tocar no banco.
+# ============================================================
+Produto = ProdutoValidado

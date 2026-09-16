@@ -1,0 +1,141 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Comissão Extra — Achei &amp; Indico</title>
+  <style>
+    :root {
+      --bg: #0b0d10;
+      --surface: #161a20;
+      --surface-2: #0f1216;
+      --border: #262b33;
+      --text: #e8eaf0;
+      --muted: #9aa3b2;
+      --primary: #ff6600;
+      --primary-2: #ff8c33;
+      --success: #4ade80;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+    body { background: var(--bg); color: var(--text); min-height: 100vh; }
+    header { background: linear-gradient(135deg, var(--primary), var(--primary-2)); padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+    header .logo { color: #fff; font-size: 20px; font-weight: 800; text-decoration: none; }
+    header nav a { color: #fff; text-decoration: none; font-weight: 600; font-size: 14px; padding: 8px 14px; border-radius: 8px; background: rgba(255,255,255,.18); }
+    .container { max-width: 900px; margin: 0 auto; padding: 24px; }
+    .titulo { margin-bottom: 22px; }
+    .titulo h1 { font-size: 24px; margin-bottom: 4px; }
+    .titulo p { color: var(--muted); font-size: 14px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-bottom: 18px; }
+    .card h2 { font-size: 16px; color: var(--primary-2); margin-bottom: 6px; }
+    .card .sub { color: var(--muted); font-size: 13px; margin-bottom: 14px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 18px; }
+    .mini-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+    .mini-card .ico { font-size: 24px; margin-bottom: 8px; }
+    .mini-card h3 { font-size: 14px; margin-bottom: 6px; }
+    .mini-card p { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+    .mini-card .destaque { color: var(--primary-2); font-weight: 800; font-size: 15px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    th { text-align: left; color: var(--muted); font-size: 11.5px; text-transform: uppercase; letter-spacing: .04em; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+    td { padding: 10px; border-bottom: 1px solid rgba(38,43,51,.5); }
+    tr:last-child td { border-bottom: none; }
+    .pct { font-weight: 800; color: var(--success); white-space: nowrap; }
+    .badge-xtra { background: rgba(255,102,0,.14); color: var(--primary-2); border: 1px solid rgba(255,102,0,.35); font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: .03em; }
+    .badge-bonus { background: rgba(74,222,128,.12); color: var(--success); border: 1px solid rgba(74,222,128,.35); font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: .03em; }
+    .linha-alta td { background: rgba(255,102,0,.05); }
+    .aviso { background: rgba(255,102,0,.10); border: 1px solid rgba(255,102,0,.3); border-radius: 12px; padding: 14px 18px; font-size: 13px; line-height: 1.6; margin-bottom: 18px; }
+    .aviso strong { color: var(--primary-2); }
+  </style>
+</head>
+<body>
+  <header>
+    <a class="logo" href="#" onclick="history.back(); return false;">🛍️ Achei &amp; Indico</a>
+    <nav><a href="#" onclick="history.back(); return false;">← Voltar ao Dashboard</a></nav>
+  </header>
+
+  <div class="container">
+    <div class="titulo">
+      <h1>🎓 Comissão Extra — a escolinha</h1>
+      <p>Entenda por que algumas lojas pagam muito mais e quais priorizar no Sharefy (R-23 a R-25).</p>
+    </div>
+
+    <div class="grid-3">
+      <div class="mini-card">
+        <div class="ico">🏪</div>
+        <h3>Loja comum</h3>
+        <p>A maioria dos produtos da Shopee paga uma comissão pequena. Vender só isso é trabalhar muito para ganhar pouco.</p>
+      </div>
+      <div class="mini-card">
+        <div class="ico">🏅</div>
+        <h3>XTRA COMMISSION</h3>
+        <p>Marcas oficiais (Xiaomi, Samsung, LG...) com programa especial que paga <span class="destaque">até 12%</span> — com selo no Sharefy.</p>
+      </div>
+      <div class="mini-card">
+        <div class="ico">🔥</div>
+        <h3>Lojas bônus</h3>
+        <p>Lojistas parceiros com comissões altíssimas: <span class="destaque">até 78%</span> (Cristal Elegance). É onde o dinheiro explode.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>💰 Por que isso importa?</h2>
+      <p class="sub">Quanto você ganha vendendo um produto de <strong>R$ {{ preco_exemplo }}</strong> em cada tipo de loja:</p>
+      <table>
+        <thead>
+          <tr><th>Loja</th><th>Comissão</th><th>Seu ganho por venda</th></tr>
+        </thead>
+        <tbody>
+          {% for ex in exemplos %}
+          <tr>
+            <td>{{ ex.rotulo }}</td>
+            <td>{% if ex.percentual %}<span class="pct">{{ ex.percentual }}%</span>{% else %}<span style="color:var(--muted)">padrão</span>{% endif %}</td>
+            <td>{% if ex.ganho %}<strong>R$ {{ ex.ganho }}</strong>{% else %}<span style="color:var(--muted)">poucos centavos</span>{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>🏅 Top 10 Lojas Oficiais — XTRA COMMISSION</h2>
+      <p class="sub">Marcas grandes e confiáveis. Ótimas para volume de vendas com comissão acima do padrão.</p>
+      <table>
+        <thead>
+          <tr><th>Loja</th><th>Nicho</th><th>Comissão</th></tr>
+        </thead>
+        <tbody>
+          {% for loja in lojas_xtra %}
+          <tr>
+            <td><strong>{{ loja.nome }}</strong> <span class="badge-xtra">XTRA</span></td>
+            <td>{{ loja.nicho }}</td>
+            <td class="pct">até {{ loja.comissao }}%</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>🔥 Top 10 Lojas Bônus — Altas Comissões</h2>
+      <p class="sub">Lojistas parceiros que pagam muito acima do padrão. Priorize quando aparecerem no Sharefy!</p>
+      <table>
+        <thead>
+          <tr><th>Loja</th><th>Comissão</th></tr>
+        </thead>
+        <tbody>
+          {% for loja in lojas_bonus %}
+          <tr class="{% if loja.comissao >= 48 %}linha-alta{% endif %}">
+            <td><strong>{{ loja.nome }}</strong> <span class="badge-bonus">bônus</span></td>
+            <td class="pct">{{ loja.comissao }}%</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="aviso">
+      🎯 <strong>Como usar no Sharefy:</strong> quando um produto vier de uma loja XTRA ou bônus, ele já aparece com o selo na dashboard. Dê prioridade a ele — o mesmo esforço de divulgação pode pagar <strong>5 a 15 vezes mais</strong> por venda. Compare sempre a comissão antes de escolher o que divulgar.
+    </div>
+  </div>
+</body>
+</html>
