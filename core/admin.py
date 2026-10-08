@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import (Divulgacao, GrupoDivulgacao, LojaAltaComissao, PostRegistro,
-                     ProdutoValidado, SnapshotVendas)
+                     ProdutoValidado, SnapshotVendas, VideoGerado)
 
 @admin.register(ProdutoValidado)
 class ProdutoValidadoAdmin(admin.ModelAdmin):
@@ -40,3 +40,11 @@ class PostRegistroAdmin(admin.ModelAdmin):
 class SnapshotVendasAdmin(admin.ModelAdmin):
     list_display = ('item_id', 'vendas', 'posicao', 'capturado_em')
     search_fields = ('item_id',)
+
+
+@admin.register(VideoGerado)
+class VideoGeradoAdmin(admin.ModelAdmin):
+    list_display = ('nome', 'status', 'modelo', 'duracao', 'custo_estimado_usd', 'criado_em')
+    list_filter = ('status', 'modelo')
+    search_fields = ('nome', 'item_id')
+    readonly_fields = ('operation_name', 'arquivo', 'prompt', 'erro')

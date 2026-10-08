@@ -150,6 +150,44 @@ class LojaAltaComissao(models.Model):
 
     def __str__(self):
         return f"{self.nome} (até {self.comissao_maxima}%)"
+# ============================================================
+# VÍDEO GERADO — fila "Vídeos prontos para postar".
+# Guarda o job do Veo (operation_name), o .mp4 baixado, a
+# legenda e o link de afiliado, tudo junto para publicar.
+# ============================================================
+class VideoGerado(models.Model):
+    STATUS_CHOICES = [
+        ('gerando', 'Gerando'),
+        ('pronto', 'Pronto'),
+        ('erro', 'Erro'),
+    ]
+    item_id = models.CharField(max_length=100, db_index=True, verbose_name="ID do item")
+    nome = models.CharField(max_length=255, verbose_name="Nome do produto")
+    imagem_url = models.URLField(max_length=500, blank=True, verbose_name="URL da imagem")
+    link_afiliado = models.URLField(max_length=500, blank=True, verbose_name="Link de afiliado")
+    legenda = models.TextField(blank=True, default='', verbose_name="Legenda")
+    prompt = models.TextField(blank=True, default='', verbose_name="Prompt enviado ao Veo")
+    modelo = models.CharField(max_length=60, blank=True, default='', verbose_name="Modelo")
+    duracao = models.PositiveSmallIntegerField(default=8, verbose_name="Duração (s)")
+    operation_name = models.CharField(max_length=255, blank=True, default='', verbose_name="Operação no Google")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='gerando', db_index=True, verbose_name="Status")
+    erro = models.TextField(blank=True, default='', verbose_name="Erro")
+    arquivo = models.CharField(max_length=255, blank=True, default='', verbose_name="Arquivo .mp4")
+    custo_estimado_usd = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True, verbose_name="Custo estimado (US$)")
+    criado_em = models.DateTimeField(auto_now_add=True, db_index=True, verbose_name="Criado em")
+    concluido_em = models.DateTimeField(null=True, blank=True, verbose_name="Concluído em")
+
+    class Meta:
+        verbose_name = "Vídeo gerado"
+        verbose_name_plural = "Vídeos gerados"
+        ordering = ['-criado_em']
+        indexes = [
+            models.Index(fields=['item_id', 'status'], name='idx_video_item_status'),
+        ]
+
+    def __str__(self):
+        return f"{self.nome} [{self.status}]"
+
     # ============================================================
 # ALIAS DE COMPATIBILIDADE
 # Seu views.py (linha 1113) usa o nome "Produto".

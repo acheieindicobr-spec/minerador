@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views
+from . import views, views_video
 
 urlpatterns = [
     path('', views.pagina_mineracao, name='home'),  # 🔥 RAIZ -> abre direto a página de produtos
@@ -17,4 +17,10 @@ urlpatterns = [
     path('api/registrar-divulgacao/', views.registrar_divulgacao, name='registrar_divulgacao'),
     path('produto_detalhes/<int:produto_id>/', views.produto_detalhes, name='produto_detalhes'),
     path('gerar_conteudo/', views.gerar_conteudo, name='gerar_conteudo'),
+    # ===== VÍDEO PRONTO EM 1 CLIQUE (Veo) =====
+    path('api/video/iniciar/', views_video.iniciar_video, name='iniciar_video'),
+    path('api/video/status/<int:video_id>/', views_video.status_video, name='status_video'),
+    path('video/<int:video_id>/ver/', views_video.ver_video, name='ver_video'),
+    path('video/<int:video_id>/baixar/', views_video.baixar_video, name='baixar_video'),
+    path('videos/', views_video.videos_prontos, name='videos_prontos'),
 ]
