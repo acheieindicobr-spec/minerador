@@ -1,4 +1,5 @@
 import random
+import hashlib
 import json
 import os
 import re
@@ -7,6 +8,7 @@ import urllib.parse
 from collections import Counter
 import requests
 from django.conf import settings
+from django.core.cache import cache as cache_django
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
@@ -116,14 +118,15 @@ def _chamar_gemini(prompt_sistema, temperatura=0.5, max_tokens=2048):
     if not GEMINI_API_KEY:
         return ""
     for modelo in MODELOS_GEMINI:
-        url_api = f"https://generativelanguage.googleapis.com/v1beta/models/{modelo}:generateContent?key={GEMINI_API_KEY}"
+        url_api = f"https://generativelanguage.googleapis.com/v1beta/models/{modelo}:generateContent"
         payload = {
             "contents": [{"parts": [{"text": prompt_sistema}]}],
             "generationConfig": {"temperature": temperatura, "maxOutputTokens": max_tokens},
         }
         for _ in range(2):
             try:
-                response = requests.post(url_api, json=payload, timeout=25)
+                response = requests.post(url_api, json=payload, timeout=25,
+                                         headers={"x-goog-api-key": GEMINI_API_KEY})
                 res_json = response.json()
                 if "candidates" in res_json and res_json["candidates"]:
                     return res_json["candidates"][0]["content"]["parts"][0]["text"].strip()
@@ -135,7 +138,7 @@ def _chamar_gemini(prompt_sistema, temperatura=0.5, max_tokens=2048):
                         continue
                     break
             except Exception as req_err:
-                print(f"[ERRO REQUISIÇÃO GEMINI]: {req_err}")
+                print(f"[ERRO REQUISIÇÃO GEMINI]: {type(req_err).__name__}")  # sem a URL: ela revelaria a chave
                 time.sleep(1)
     return ""
 def _converter_vendas(valor):
@@ -432,11 +435,18 @@ def pagina_mineracao(request):
         pagina = 1
     erro_busca = None
     try:
-        shopee = ShopeeService()
-        raw_produtos = shopee.buscar_mais_vendidos(
-            nicho=nicho_busca_api,
-            total_desejado=TOTAL_DESEJADO,
-        )
+        # cache de 10 min: trocar de página/filtro não chama a Shopee de novo
+        chave_cache = "mineracao:" + hashlib.md5(f"{nicho_busca_api}|{TOTAL_DESEJADO}".encode()).hexdigest()
+        forcar = any(request.GET.get(k) for k in ("refresh", "atualizar", "forcar"))
+        raw_produtos = None if forcar else cache_django.get(chave_cache)
+        if raw_produtos is None:
+            shopee = ShopeeService()
+            raw_produtos = shopee.buscar_mais_vendidos(
+                nicho=nicho_busca_api,
+                total_desejado=TOTAL_DESEJADO,
+            )
+            if raw_produtos:
+                cache_django.set(chave_cache, raw_produtos, 600)
     except Exception as e:
         print(f"[ERRO AO BUSCAR PRODUTOS]: {e}")
         raw_produtos = []
@@ -823,7 +833,7 @@ def minha_vitrine(request):
 # ============================================================
 def posts_de_hoje():
     """Retorna os registros de postagem feitos hoje."""
-    inicio_do_dia = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    inicio_do_dia = timezone.localtime().replace(hour=0, minute=0, second=0, microsecond=0)
     return PostRegistro.objects.filter(data_postagem__gte=inicio_do_dia)
 @require_POST
 def marcar_postado(request):
@@ -1028,7 +1038,10 @@ COMISSAO_EXTRA_MINIMO = 20      # 🔥 % mínima para exibir o selo de comissão
 def minhas_divulgacoes(request):
     """Painel com todo material gerado, vinculado ao item_id e ao link da Shopee."""
     divulgacoes = Divulgacao.objects.all()[:100]
-    return render(request,'core/minhas_divulgacoes.html', {'divulgacoes': divulgacoes})
+    return render(request, 'core/minhas_divulgacoes.html', {
+        'divulgacoes': divulgacoes,
+        'total_lojas': LojaAltaComissao.objects.count(),
+    })
 @require_POST
 def registrar_divulgacao(request):
     """Registra uma divulgação gerada (chamado pelo front ao gerar/copiar o material)."""

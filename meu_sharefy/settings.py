@@ -28,10 +28,10 @@ load_dotenv(BASE_DIR / '.env')
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DJANGO_DEBUG', 'True').lower() in ('1', 'true', 'yes')  # no Render: DJANGO_DEBUG=False
 
 # PERMITE ACESSO DO CELULAR E OUTROS DISPOSITIVOS NA MESMA REDE WI-FI
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = [h.strip() for h in os.getenv('DJANGO_ALLOWED_HOSTS', '*').split(',') if h.strip()]
 
 # Application definition
 
@@ -133,3 +133,10 @@ MAILERS = {
 SHOPEE_APP_ID = os.getenv('SHOPEE_APP_ID')
 SHOPEE_SECRET = os.getenv('SHOPEE_SECRET')
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+
+# Segurança em produção (só valem com DJANGO_DEBUG=False; o padrão continua igual ao de antes)
+CSRF_TRUSTED_ORIGINS = [o.strip() for o in os.getenv('DJANGO_CSRF_ORIGINS', '').split(',') if o.strip()]
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True

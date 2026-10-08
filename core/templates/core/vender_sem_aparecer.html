@@ -39,8 +39,8 @@
 </head>
 <body>
   <header>
-    <a class="logo" href="#" onclick="history.back(); return false;">🛍️ Achei &amp; Indico</a>
-    <nav><a href="#" onclick="history.back(); return false;">← Voltar ao Dashboard</a></nav>
+    <a class="logo" href="{% url 'pagina_mineracao' %}">🛍️ Achei &amp; Indico</a>
+    <nav><a href="{% url 'pagina_mineracao' %}">← Voltar ao Dashboard</a></nav>
   </header>
 
   <div class="container">
@@ -125,11 +125,17 @@
       var campo = document.getElementById(id);
       campo.select();
       campo.setSelectionRange(0, 99999);
-      navigator.clipboard.writeText(campo.value).then(function() {
+      function feito() {
         var textoOriginal = botao.textContent;
         botao.textContent = '✅ Copiado!';
         setTimeout(function() { botao.textContent = textoOriginal; }, 1500);
-      });
+      }
+      // navigator.clipboard só existe em HTTPS; no celular pela rede local (HTTP) usa o método antigo
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(campo.value).then(feito, function() { document.execCommand('copy'); feito(); });
+      } else {
+        try { document.execCommand('copy'); feito(); } catch (e) {}
+      }
     }
   </script>
 </body>
